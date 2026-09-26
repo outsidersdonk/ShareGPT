@@ -16,12 +16,18 @@ export interface MergeReport {
   changed: boolean // 合并结果是否与 ours 不同 (决定要不要落盘/回推)
 }
 
-function conflictCopyPath(path: string): string {
+function conflictCopyPath(path: string, taken: Set<string>): string {
   // 保留原扩展名 (.canvas/.base/.txt 等不被改成 .md)。
   const m = path.match(/\.([a-z0-9]+)$/i)
   const ext = m ? m[1] : 'md'
   const base = m ? path.slice(0, -(ext.length + 1)) : path
-  return `${base} (云端冲突副本).${ext}`
+  // 副本名必须未被占用: 同一文件再次冲突时若沿用旧副本名, 新的云端内容会被旧副本覆盖而丢失。
+  let candidate = `${base} (云端冲突副本).${ext}`
+  for (let n = 2; taken.has(candidate); n += 1) {
+    candidate = `${base} (云端冲突副本 ${n}).${ext}`
+  }
+  taken.add(candidate)
+  return candidate
 }
 
 export function mergeVault(base: VaultFiles, ours: VaultFiles, theirs: VaultFiles): MergeReport {
@@ -33,6 +39,7 @@ export function mergeVault(base: VaultFiles, ours: VaultFiles, theirs: VaultFile
   const deleted: string[] = []
 
   const paths = new Set([...Object.keys(base), ...Object.keys(ours), ...Object.keys(theirs)])
+  const takenPaths = new Set(paths)
   for (const p of paths) {
     const b = base[p]
     const o = ours[p]
@@ -58,7 +65,7 @@ export function mergeVault(base: VaultFiles, ours: VaultFiles, theirs: VaultFile
           autoMerged.push(p)
         } else {
           merged[p] = o
-          const cp = conflictCopyPath(p)
+          const cp = conflictCopyPath(p, takenPaths)
           merged[cp] = t
           conflicts.push({ path: p, copyPath: cp })
         }
