@@ -269,7 +269,7 @@ export function EventEditorDialog({
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="h-10 w-28 text-base"
+                  className="h-10 w-36 text-base"
                 />
               )}
             </div>
@@ -286,7 +286,7 @@ export function EventEditorDialog({
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="h-10 w-28 text-base"
+                  className="h-10 w-36 text-base"
                 />
               )}
             </div>
