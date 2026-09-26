@@ -5,6 +5,7 @@
 //   - 按钮/输入框超出窗口左右边界
 //   - 两个按钮互相重叠
 //   - 文字被裁切且没有省略号
+//   - 主按钮 (data-variant=default) 被挤到窗口底部之外
 // 带 --dump 参数时, 额外把截图以 base64 打印到标准输出 (供 CI 日志取回人工查看)。
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -54,6 +55,7 @@ const TEXT = {
 // 在页面内测量布局问题。打开对话框时只检查对话框内部 (背景被遮住)。
 function measureLayout() {
   const vw = window.innerWidth;
+  const vh = window.innerHeight;
   const dialog = document.querySelector('[role="dialog"]');
   const scope = dialog || document.body;
   const issues = [];
@@ -98,6 +100,17 @@ function measureLayout() {
       issues.push({
         type: "control-outside-window",
         text: `${label(el)} [${Math.round(rect.left)}, ${Math.round(rect.right)}] / ${vw}`,
+      });
+    }
+  }
+
+  for (const el of scope.querySelectorAll('button[data-variant="default"]')) {
+    if (!isVisible(el)) continue;
+    const rect = el.getBoundingClientRect();
+    if (rect.bottom > vh + 1) {
+      issues.push({
+        type: "primary-action-below-window",
+        text: `${label(el)} bottom ${Math.round(rect.bottom)} / ${vh}`,
       });
     }
   }
@@ -147,6 +160,7 @@ const FAILING = [
   "control-outside-window",
   "controls-overlap",
   "text-clipped",
+  "primary-action-below-window",
 ];
 
 async function setWindowSize(electronApp, page, size) {
