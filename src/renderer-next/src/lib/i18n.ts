@@ -1,0 +1,32 @@
+// 界面语言: 中文为默认与首选, English 为第二语言。
+// 只覆盖主要界面 (导航、设置、网络、AI 提示、日历、待办、工作区选择); 其余文案仍为中文。
+// 用法: 组件内 `const { t } = useI18n()` 后写 `t('中文', 'English')`, 中文原文留在代码里便于维护。
+import { enUS, zhCN } from 'date-fns/locale'
+
+export type Language = 'zh' | 'en'
+
+export const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
+  { value: 'zh', label: '中文' },
+  { value: 'en', label: 'English' },
+]
+
+export function normalizeLanguage(value: unknown): Language {
+  return value === 'en' ? 'en' : 'zh'
+}
+
+export function pick(language: Language, zh: string, en: string): string {
+  return language === 'en' ? en : zh
+}
+
+// 日历随语言: 中文周一为首 + 中文日期格式; English 周日为首 + 美式日期格式。
+export function dateLocale(language: Language) {
+  return language === 'en' ? enUS : zhCN
+}
+
+export function weekStartsOn(language: Language): 0 | 1 {
+  return language === 'en' ? 0 : 1
+}
+
+export function htmlLang(language: Language): string {
+  return language === 'en' ? 'en' : 'zh-CN'
+}
