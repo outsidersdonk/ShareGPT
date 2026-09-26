@@ -39,6 +39,19 @@ export function hourLabel(hour: number, language: Language): string {
   return `${h12} ${hour < 12 ? 'AM' : 'PM'}`
 }
 
+// 应用自动创建的默认名称 (默认日历「个人」、收件箱「收件箱」) 在 English 下显示译名;
+// 用户自己命名或改过名的日历/清单保持原样。
+const BUILTIN_NAMES_EN: Record<string, string> = { 个人: 'Personal', 收件箱: 'Inbox' }
+
+export function builtinName(
+  name: string,
+  isBuiltin: boolean | undefined,
+  language: Language,
+): string {
+  if (language !== 'en' || !isBuiltin) return name
+  return BUILTIN_NAMES_EN[name] ?? name
+}
+
 export function htmlLang(language: Language): string {
   return language === 'en' ? 'en' : 'zh-CN'
 }

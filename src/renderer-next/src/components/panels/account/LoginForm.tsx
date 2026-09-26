@@ -421,7 +421,7 @@ export function LoginForm() {
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 {t(
                   '适合不需要团队协作、希望自行管理代理和翻译服务的使用场景。',
-                  "For people who don't need a team and want to manage their own proxy and translation service.",
+                  'For solo use with your own proxy and translation.',
                 )}
               </p>
             </div>
@@ -436,7 +436,7 @@ export function LoginForm() {
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
                     {t(
                       '个人代理、翻译接口和相关偏好只归当前本机工作区使用。',
-                      'Your proxy, translation service and preferences belong only to this local workspace.',
+                      'Proxy, translation and preferences stay in this workspace.',
                     )}
                   </p>
                 </div>
@@ -450,7 +450,7 @@ export function LoginForm() {
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
                     {t(
                       'ChatGPT、Claude 和 Gemini 使用个人专属分区，不读取任何团队账号的登录状态或历史会话。',
-                      'ChatGPT, Claude and Gemini use your own storage and never read any team account sign-ins or history.',
+                      'ChatGPT, Claude and Gemini keep their own sign-ins, apart from any team account.',
                     )}
                   </p>
                 </div>
@@ -464,7 +464,7 @@ export function LoginForm() {
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
                     {t(
                       '进入后打开侧栏底部的“账户”，选择“登录组织工作区”即可切换；两侧数据都会继续保留。',
-                      'Open "Account" at the bottom of the sidebar and choose "Sign in to team workspace". Data on both sides is kept.',
+                      'Open "Account" in the sidebar, then "Sign in to team workspace". Both sides keep their data.',
                     )}
                   </p>
                 </div>

@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { PRIORITY_META, formatDue } from './helpers'
 import type { Task, TaskList } from '@/store/useTasksStore'
 import { useI18n } from '@/hooks/useI18n'
+import { builtinName } from '@/lib/i18n'
 
 // 单条任务行 (对齐滴答清单):
 //  - 左侧圆形勾选 (点击完成: 填充 + 缩放反馈; 行随后描边/淡出, 由父级把它移入已完成)
@@ -136,7 +137,7 @@ export function TaskItem({
         <span
           className="mt-1.5 size-2 shrink-0 rounded-full opacity-70"
           style={{ backgroundColor: list.color }}
-          title={list.name}
+          title={builtinName(list.name, list.isInbox, language)}
         />
       )}
     </div>

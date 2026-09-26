@@ -45,7 +45,7 @@ export const NAV: NavItem[] = [
     icon: Cable,
     hint: '把指定流量转发到代理出口',
     labelEn: 'Network / Proxy',
-    hintEn: 'Forward selected traffic to a proxy exit',
+    hintEn: 'Proxy for AI sites',
   },
   {
     key: 'chat',
@@ -53,7 +53,7 @@ export const NAV: NavItem[] = [
     icon: MessageCircle,
     hint: '团队消息与文件',
     labelEn: 'Team Chat',
-    hintEn: 'Team messages and files',
+    hintEn: 'Team messages, files',
   },
   {
     key: 'calendar',
@@ -61,7 +61,7 @@ export const NAV: NavItem[] = [
     icon: CalendarDays,
     hint: '日程、事件与提醒',
     labelEn: 'Calendar',
-    hintEn: 'Schedule, events and reminders',
+    hintEn: 'Events and reminders',
   },
   {
     key: 'team',
@@ -85,7 +85,7 @@ export const NAV: NavItem[] = [
     icon: BookText,
     hint: '双链笔记、图谱与全文检索',
     labelEn: 'Notes',
-    hintEn: 'Linked notes, graph and full-text search',
+    hintEn: 'Notes, graph, search',
   },
   {
     key: 'focus',
@@ -93,7 +93,7 @@ export const NAV: NavItem[] = [
     icon: Timer,
     hint: '番茄钟、专注统计与团队排名',
     labelEn: 'Focus',
-    hintEn: 'Pomodoro timer, focus stats and team ranking',
+    hintEn: 'Pomodoro and stats',
   },
   {
     key: 'gpt',
@@ -125,7 +125,7 @@ export const NAV: NavItem[] = [
     icon: BarChart3,
     hint: '查询量与排行',
     labelEn: 'Usage',
-    hintEn: 'Message counts and rankings',
+    hintEn: 'Usage and rankings',
   },
   {
     key: 'account',

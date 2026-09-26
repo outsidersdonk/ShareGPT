@@ -49,7 +49,7 @@ export function QuickAddBar({
             placeholder ??
             t(
               '添加任务，试试「明天下午5点写周报 !high #工作」或「下周三开会」',
-              'Add a task, e.g. "Write report tomorrow 5pm !high #work" or "Meeting next Wednesday"',
+              'Add a task, e.g. "Report tomorrow 5pm !high"',
             )
           }
           className="h-11 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 md:text-base"

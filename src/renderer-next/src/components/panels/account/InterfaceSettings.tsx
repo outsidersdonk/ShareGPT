@@ -54,10 +54,7 @@ export function InterfaceSettings() {
           <div className="min-w-0 flex-1">
             <Label className="cursor-default">{t('界面语言', 'Language')}</Label>
             <p className="truncate text-xs text-muted-foreground">
-              {t(
-                '主要界面的显示语言，日历格式随之切换。',
-                'Display language for the main screens. The calendar format follows it.',
-              )}
+              {t('主要界面的显示语言，日历格式随之切换。', 'Main screens and calendar format.')}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-0.5 rounded-lg border border-border bg-muted/40 p-1">

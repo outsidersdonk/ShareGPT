@@ -6,10 +6,11 @@ import { cn } from '@/lib/utils'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { CALENDAR_PALETTE } from './helpers'
 import { useI18n } from '@/hooks/useI18n'
+import { builtinName } from '@/lib/i18n'
 
 // 左侧日历列表: 色点 + 名称 + 显隐勾选, 底部「新建日历」。
 export function CalendarSidebar() {
-  const { t } = useI18n()
+  const { language, t } = useI18n()
   const calendars = useCalendarStore((s) => s.calendars)
   const toggleVisible = useCalendarStore((s) => s.toggleCalendarVisible)
   const addCalendar = useCalendarStore((s) => s.addCalendar)
@@ -58,7 +59,7 @@ export function CalendarSidebar() {
                 c.visible ? 'text-foreground' : 'text-muted-foreground',
               )}
             >
-              {c.name}
+              {builtinName(c.name, c.isDefault, language)}
             </span>
             {!c.isDefault && (
               <button

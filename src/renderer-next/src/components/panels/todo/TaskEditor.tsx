@@ -18,6 +18,7 @@ import { PRIORITY_META, PRIORITY_OPTIONS } from './helpers'
 import type { Priority, RepeatFreq, Subtask, Task, TaskList } from '@/store/useTasksStore'
 import { useTasksStore } from '@/store/useTasksStore'
 import { useI18n } from '@/hooks/useI18n'
+import { builtinName } from '@/lib/i18n'
 
 const REPEAT_OPTIONS: { value: RepeatFreq | 'none'; label: string; labelEn: string }[] = [
   { value: 'none', label: '不重复', labelEn: 'Does not repeat' },
@@ -39,7 +40,7 @@ export function TaskEditor({
   open: boolean
   onOpenChange: (v: boolean) => void
 }) {
-  const { t } = useI18n()
+  const { language, t } = useI18n()
   const updateTask = useTasksStore((s) => s.updateTask)
   const removeTask = useTasksStore((s) => s.removeTask)
   const addSubtask = useTasksStore((s) => s.addSubtask)
@@ -150,7 +151,7 @@ export function TaskEditor({
                     )}
                   >
                     <span className="size-2 rounded-full" style={{ backgroundColor: l.color }} />
-                    {l.name}
+                    {builtinName(l.name, l.isInbox, language)}
                   </button>
                 ))}
               </div>

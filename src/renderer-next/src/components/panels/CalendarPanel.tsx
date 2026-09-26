@@ -143,7 +143,7 @@ export function CalendarPanel() {
       <PanelScaffold
         icon={CalendarDays}
         title={t('日历', 'Calendar')}
-        hint={t('个人日程', 'Personal schedule')}
+        hint={t('个人日程', 'Personal')}
         scrollable={false}
       >
         <LocalDataStatus loading={loading} error={loadError} onRetry={init} />
@@ -195,7 +195,7 @@ export function CalendarPanel() {
     <PanelScaffold
       icon={CalendarDays}
       title={t('日历', 'Calendar')}
-      hint={t('个人日程', 'Personal schedule')}
+      hint={t('个人日程', 'Personal')}
       toolbar={toolbar}
       scrollable={false}
     >

@@ -18,6 +18,7 @@ import { useCalendarStore } from '@/store/useCalendarStore'
 import type { CalendarEvent, NewEventInput, RecurrenceFreq } from '@/store/useCalendarStore'
 import { RECURRENCE_OPTIONS, type RecurrencePreset } from './helpers'
 import { useI18n } from '@/hooks/useI18n'
+import { builtinName } from '@/lib/i18n'
 
 // 事件编辑器。两种模式:
 //  - 新建: 传 draft (预填的起止/全天), eventId 为空。
@@ -61,7 +62,7 @@ export function EventEditorDialog({
   target: EditorTarget | null
   onClose: () => void
 }) {
-  const { t } = useI18n()
+  const { language, t } = useI18n()
   const calendars = useCalendarStore((s) => s.calendars)
   const events = useCalendarStore((s) => s.events)
   const addEvent = useCalendarStore((s) => s.addEvent)
@@ -242,7 +243,7 @@ export function EventEditorDialog({
                     )}
                   >
                     <span className="size-2.5 rounded-full" style={{ backgroundColor: c.color }} />
-                    {c.name}
+                    {builtinName(c.name, c.isDefault, language)}
                     {active && <Check className="size-3.5" />}
                   </button>
                 )

@@ -18,6 +18,7 @@ import { useTasksStore } from '@/store/useTasksStore'
 import type { TodoSelection } from './TodoSidebar'
 import type { ParsedQuickAdd } from '@/lib/quickadd'
 import { useI18n } from '@/hooks/useI18n'
+import { builtinName } from '@/lib/i18n'
 
 // 右侧任务列表区: 顶部快速添加 + 带语义分组头的任务列表。
 //  - 智能视图「今天/最近7天/全部」按到期分组; 「已完成」按完成时间倒序; 清单视图按到期分组。
@@ -34,7 +35,7 @@ export function TaskListView({
   inboxId: string
   onOpenTask: (id: string) => void
 }) {
-  const { t } = useI18n()
+  const { language, t } = useI18n()
   const addTask = useTasksStore((s) => s.addTask)
   const toggleTask = useTasksStore((s) => s.toggleTask)
 
@@ -45,7 +46,7 @@ export function TaskListView({
     if (selection.kind === 'list') {
       const l = listById.get(selection.id)
       return {
-        title: l?.name ?? t('清单', 'List'),
+        title: l ? builtinName(l.name, l.isInbox, language) : t('清单', 'List'),
         isCompleted: false,
         defaultListId: selection.id,
       }
@@ -62,7 +63,7 @@ export function TaskListView({
       isCompleted: selection.view === 'completed',
       defaultListId: selection.view === 'inbox' ? inboxId : inboxId,
     }
-  }, [selection, listById, inboxId, t])
+  }, [selection, listById, inboxId, language, t])
 
   const viewTasks = useMemo(() => {
     if (selection.kind === 'list') return selectByList(tasks, selection.id)
