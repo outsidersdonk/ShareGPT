@@ -17,13 +17,14 @@ import { Switch } from '@/components/ui/switch'
 import { PRIORITY_META, PRIORITY_OPTIONS } from './helpers'
 import type { Priority, RepeatFreq, Subtask, Task, TaskList } from '@/store/useTasksStore'
 import { useTasksStore } from '@/store/useTasksStore'
+import { useI18n } from '@/hooks/useI18n'
 
-const REPEAT_OPTIONS: { value: RepeatFreq | 'none'; label: string }[] = [
-  { value: 'none', label: '不重复' },
-  { value: 'daily', label: '每天' },
-  { value: 'weekly', label: '每周' },
-  { value: 'monthly', label: '每月' },
-  { value: 'yearly', label: '每年' },
+const REPEAT_OPTIONS: { value: RepeatFreq | 'none'; label: string; labelEn: string }[] = [
+  { value: 'none', label: '不重复', labelEn: 'Does not repeat' },
+  { value: 'daily', label: '每天', labelEn: 'Daily' },
+  { value: 'weekly', label: '每周', labelEn: 'Weekly' },
+  { value: 'monthly', label: '每月', labelEn: 'Monthly' },
+  { value: 'yearly', label: '每年', labelEn: 'Yearly' },
 ]
 
 // 任务编辑器 (Dialog): 标题/备注/清单/优先级/到期(日期+时间+全天)/标签/子任务/重复/删除。
@@ -38,6 +39,7 @@ export function TaskEditor({
   open: boolean
   onOpenChange: (v: boolean) => void
 }) {
+  const { t } = useI18n()
   const updateTask = useTasksStore((s) => s.updateTask)
   const removeTask = useTasksStore((s) => s.removeTask)
   const addSubtask = useTasksStore((s) => s.addSubtask)
@@ -80,7 +82,7 @@ export function TaskEditor({
   // 持久化当前草稿 (保存即写, 关闭也保存)。
   const persist = () => {
     updateTask(task.id, {
-      title: title.trim() || '未命名任务',
+      title: title.trim() || t('未命名任务', 'Untitled task'),
       notes: notes.trim() || undefined,
       listId,
       priority,
@@ -109,7 +111,7 @@ export function TaskEditor({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[85vh] gap-0 overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="border-b border-border px-6 py-4">
-          <DialogTitle className="text-lg">编辑任务</DialogTitle>
+          <DialogTitle className="text-lg">{t('编辑任务', 'Edit task')}</DialogTitle>
         </DialogHeader>
 
         <div className="max-h-[60vh] space-y-4 overflow-y-auto px-6 py-4">
@@ -117,7 +119,7 @@ export function TaskEditor({
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="任务标题"
+            placeholder={t('任务标题', 'Task title')}
             className="h-11 text-lg font-medium md:text-lg"
           />
 
@@ -125,7 +127,7 @@ export function TaskEditor({
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="备注…"
+            placeholder={t('备注…', 'Notes…')}
             rows={3}
             className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-[15px] leading-relaxed outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
           />
@@ -133,7 +135,7 @@ export function TaskEditor({
           {/* 清单 + 优先级 */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-sm text-muted-foreground">清单</Label>
+              <Label className="text-sm text-muted-foreground">{t('清单', 'List')}</Label>
               <div className="flex flex-wrap gap-1.5">
                 {lists.map((l) => (
                   <button
@@ -154,7 +156,7 @@ export function TaskEditor({
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm text-muted-foreground">优先级</Label>
+              <Label className="text-sm text-muted-foreground">{t('优先级', 'Priority')}</Label>
               <div className="flex gap-1.5">
                 {PRIORITY_OPTIONS.map((p) => {
                   const m = PRIORITY_META[p]
@@ -163,7 +165,9 @@ export function TaskEditor({
                       key={p}
                       type="button"
                       onClick={() => setPriority(p)}
-                      title={p === 0 ? '无' : `${m.label}优先级`}
+                      title={
+                        p === 0 ? t('无', 'None') : t(`${m.label}优先级`, `${m.labelEn} priority`)
+                      }
                       className={cn(
                         'grid size-8 place-items-center rounded-md border transition-colors',
                         priority === p
@@ -182,7 +186,9 @@ export function TaskEditor({
           {/* 到期 日期 + 时间 + 全天 */}
           <div className="space-y-2 rounded-lg border border-border p-3">
             <div className="flex items-center gap-3">
-              <Label className="w-12 shrink-0 text-sm text-muted-foreground">日期</Label>
+              <Label className="w-12 shrink-0 text-sm text-muted-foreground">
+                {t('日期', 'Date')}
+              </Label>
               <Input
                 type="date"
                 value={dueDate}
@@ -197,7 +203,7 @@ export function TaskEditor({
                     setDueTime('')
                   }}
                   className="text-muted-foreground hover:text-destructive"
-                  title="清除日期"
+                  title={t('清除日期', 'Clear date')}
                 >
                   <X className="size-4" />
                 </button>
@@ -206,7 +212,7 @@ export function TaskEditor({
             {dueDate && (
               <>
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm text-muted-foreground">全天</Label>
+                  <Label className="text-sm text-muted-foreground">{t('全天', 'All day')}</Label>
                   <Switch
                     checked={isAllDay}
                     onCheckedChange={(v) => {
@@ -217,7 +223,9 @@ export function TaskEditor({
                 </div>
                 {!isAllDay && (
                   <div className="flex items-center gap-3">
-                    <Label className="w-12 shrink-0 text-sm text-muted-foreground">时间</Label>
+                    <Label className="w-12 shrink-0 text-sm text-muted-foreground">
+                      {t('时间', 'Time')}
+                    </Label>
                     <Input
                       type="time"
                       value={dueTime}
@@ -227,7 +235,9 @@ export function TaskEditor({
                   </div>
                 )}
                 <div className="flex items-center gap-3">
-                  <Label className="w-12 shrink-0 text-sm text-muted-foreground">重复</Label>
+                  <Label className="w-12 shrink-0 text-sm text-muted-foreground">
+                    {t('重复', 'Repeat')}
+                  </Label>
                   <div className="flex flex-wrap gap-1.5">
                     {REPEAT_OPTIONS.map((o) => (
                       <button
@@ -241,7 +251,7 @@ export function TaskEditor({
                             : 'border-border text-muted-foreground hover:bg-accent',
                         )}
                       >
-                        {o.label}
+                        {t(o.label, o.labelEn)}
                       </button>
                     ))}
                   </div>
@@ -252,7 +262,7 @@ export function TaskEditor({
 
           {/* 标签 */}
           <div className="space-y-1.5">
-            <Label className="text-sm text-muted-foreground">标签</Label>
+            <Label className="text-sm text-muted-foreground">{t('标签', 'Tags')}</Label>
             <div className="flex flex-wrap items-center gap-1.5">
               {tags.map((t) => (
                 <span
@@ -274,7 +284,7 @@ export function TaskEditor({
                     addTag()
                   }
                 }}
-                placeholder="添加标签…"
+                placeholder={t('添加标签…', 'Add tag…')}
                 className="h-8 w-32 text-sm md:text-sm"
               />
             </div>
@@ -282,7 +292,7 @@ export function TaskEditor({
 
           {/* 子任务 */}
           <div className="space-y-1.5">
-            <Label className="text-sm text-muted-foreground">子任务</Label>
+            <Label className="text-sm text-muted-foreground">{t('子任务', 'Subtasks')}</Label>
             <div className="space-y-1">
               {subtasks.map((s) => (
                 <div key={s.id} className="group flex items-center gap-2">
@@ -328,7 +338,7 @@ export function TaskEditor({
                     setSubInput('')
                   }
                 }}
-                placeholder="添加子任务…"
+                placeholder={t('添加子任务…', 'Add subtask…')}
                 className="h-9 text-base md:text-base"
               />
             </div>
@@ -346,25 +356,36 @@ export function TaskEditor({
             }}
           >
             <Trash2 className="size-4" />
-            删除
+            {t('删除', 'Delete')}
           </Button>
           <div className="flex items-center gap-2">
             {/* 加入个人日历: 先保存草稿再同步 (需有到期日) */}
             <Button
               variant="outline"
               size="sm"
-              title="把此任务加入个人日历(需设置到期日期)"
+              title={t(
+                '把此任务加入个人日历(需设置到期日期)',
+                'Add this task to your calendar (needs a due date)',
+              )}
               onClick={() => {
                 persist()
                 const r = syncTaskToCalendar(task.id)
-                if (r === 'no-date') toast.error('请先设置到期日期，再加入日历')
-                else if (r === 'updated') toast.success('已更新到个人日历')
-                else if (r === 'synced') toast.success('已加入个人日历')
-                else toast.error('加入失败')
+                if (r === 'no-date')
+                  toast.error(
+                    t(
+                      '请先设置到期日期，再加入日历',
+                      'Set a due date before adding it to the calendar',
+                    ),
+                  )
+                else if (r === 'updated')
+                  toast.success(t('已更新到个人日历', 'Updated in your calendar'))
+                else if (r === 'synced')
+                  toast.success(t('已加入个人日历', 'Added to your calendar'))
+                else toast.error(t('加入失败', 'Could not add it'))
               }}
             >
               <CalendarPlus className="size-4" />
-              加入日历
+              {t('加入日历', 'Add to calendar')}
             </Button>
             <Button
               size="sm"
@@ -373,7 +394,7 @@ export function TaskEditor({
                 onOpenChange(false)
               }}
             >
-              完成
+              {t('完成', 'Done')}
             </Button>
           </div>
         </DialogFooter>

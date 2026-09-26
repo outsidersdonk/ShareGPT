@@ -16,16 +16,17 @@ import { LIST_COLORS } from './helpers'
 import type { SmartView, Task, TaskList } from '@/store/useTasksStore'
 import { smartCount, selectByList } from '@/store/useTasksStore'
 import { useTasksStore } from '@/store/useTasksStore'
+import { useI18n } from '@/hooks/useI18n'
 
 // 当前选中的视图: 智能视图用 {kind:'smart', view}, 用户清单用 {kind:'list', id}。
 export type TodoSelection = { kind: 'smart'; view: SmartView } | { kind: 'list'; id: string }
 
-const SMART_ITEMS: { view: SmartView; label: string; icon: LucideIcon }[] = [
-  { view: 'today', label: '今天', icon: CalendarDays },
-  { view: 'next7', label: '最近7天', icon: CalendarClock },
-  { view: 'inbox', label: '收件箱', icon: Inbox },
-  { view: 'all', label: '全部', icon: LayoutList },
-  { view: 'completed', label: '已完成', icon: CheckCircle2 },
+const SMART_ITEMS: { view: SmartView; label: string; labelEn: string; icon: LucideIcon }[] = [
+  { view: 'today', label: '今天', labelEn: 'Today', icon: CalendarDays },
+  { view: 'next7', label: '最近7天', labelEn: 'Next 7 days', icon: CalendarClock },
+  { view: 'inbox', label: '收件箱', labelEn: 'Inbox', icon: Inbox },
+  { view: 'all', label: '全部', labelEn: 'All', icon: LayoutList },
+  { view: 'completed', label: '已完成', labelEn: 'Completed', icon: CheckCircle2 },
 ]
 
 export function TodoSidebar({
@@ -41,6 +42,7 @@ export function TodoSidebar({
   selection: TodoSelection
   onSelect: (sel: TodoSelection) => void
 }) {
+  const { t } = useI18n()
   const addList = useTasksStore((s) => s.addList)
   const removeList = useTasksStore((s) => s.removeList)
 
@@ -68,7 +70,7 @@ export function TodoSidebar({
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
         {/* 智能清单 */}
         <nav className="space-y-0.5">
-          {SMART_ITEMS.map(({ view, label, icon: Icon }) => {
+          {SMART_ITEMS.map(({ view, label, labelEn, icon: Icon }) => {
             const active = selection.kind === 'smart' && selection.view === view
             const count = view === 'completed' ? 0 : smartCount(tasks, view, inboxId)
             return (
@@ -84,7 +86,7 @@ export function TodoSidebar({
                 )}
               >
                 <Icon className={cn('size-[18px] shrink-0', active && 'text-primary')} />
-                <span className="flex-1 truncate text-left">{label}</span>
+                <span className="flex-1 truncate text-left">{t(label, labelEn)}</span>
                 {count > 0 && (
                   <span className="text-sm tabular-nums text-muted-foreground">{count}</span>
                 )}
@@ -95,12 +97,12 @@ export function TodoSidebar({
 
         {/* 分隔 + 用户清单标题 */}
         <div className="mt-4 mb-1 flex items-center justify-between px-2.5">
-          <span className="text-sm font-medium text-muted-foreground">清单</span>
+          <span className="text-sm font-medium text-muted-foreground">{t('清单', 'Lists')}</span>
           <button
             type="button"
             onClick={() => setAdding(true)}
             className="text-muted-foreground transition-colors hover:text-foreground"
-            title="新建清单"
+            title={t('新建清单', 'New list')}
           >
             <Plus className="size-4" />
           </button>
@@ -165,7 +167,7 @@ export function TodoSidebar({
                         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
                       >
                         <Trash2 className="size-4" />
-                        删除清单
+                        {t('删除清单', 'Delete list')}
                       </button>
                     </div>
                   </>
@@ -189,7 +191,7 @@ export function TodoSidebar({
                   }
                 }}
                 onBlur={submitNew}
-                placeholder="清单名称"
+                placeholder={t('清单名称', 'List name')}
                 className="h-9 text-base"
               />
               <div className="mt-2 flex flex-wrap gap-1.5">

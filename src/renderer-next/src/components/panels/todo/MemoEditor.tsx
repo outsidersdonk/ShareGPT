@@ -14,6 +14,7 @@ import { MEMO_COLORS, isLightColor, memoBg } from './helpers'
 import { useDarkMode } from './useDarkMode'
 import type { Memo } from '@/store/useTasksStore'
 import { useTasksStore } from '@/store/useTasksStore'
+import { useI18n } from '@/hooks/useI18n'
 
 // 便签编辑器 (Dialog): 标题 + 多行正文 + 颜色色板 + 置顶 + 删除。
 export function MemoEditor({
@@ -25,6 +26,7 @@ export function MemoEditor({
   open: boolean
   onOpenChange: (v: boolean) => void
 }) {
+  const { t } = useI18n()
   const updateMemo = useTasksStore((s) => s.updateMemo)
   const removeMemo = useTasksStore((s) => s.removeMemo)
   const dark = useDarkMode()
@@ -74,12 +76,12 @@ export function MemoEditor({
         style={{ backgroundColor: bg }}
       >
         <DialogHeader className="px-5 pt-4 pb-2">
-          <DialogTitle className="sr-only">编辑便签</DialogTitle>
+          <DialogTitle className="sr-only">{t('编辑便签', 'Edit note')}</DialogTitle>
           <div className="flex items-center gap-2">
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="标题"
+              placeholder={t('标题', 'Title')}
               className={cn(
                 'h-10 border-0 bg-transparent px-0 text-lg font-semibold shadow-none focus-visible:ring-0 md:text-lg',
                 ink,
@@ -95,7 +97,7 @@ export function MemoEditor({
                   ? 'text-primary'
                   : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200',
               )}
-              title={pinned ? '取消置顶' : '置顶'}
+              title={pinned ? t('取消置顶', 'Unpin') : t('置顶', 'Pin')}
             >
               <Pin className="size-4" fill={pinned ? 'currentColor' : 'none'} />
             </button>
@@ -106,7 +108,7 @@ export function MemoEditor({
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="写点什么…"
+            placeholder={t('写点什么…', 'Write something…')}
             rows={8}
             className={cn(
               'w-full resize-none border-0 bg-transparent text-[15px] leading-relaxed outline-none',
@@ -146,7 +148,7 @@ export function MemoEditor({
             }}
           >
             <Trash2 className="size-4" />
-            删除
+            {t('删除', 'Delete')}
           </Button>
           <Button
             size="sm"
@@ -155,7 +157,7 @@ export function MemoEditor({
               onOpenChange(false)
             }}
           >
-            完成
+            {t('完成', 'Done')}
           </Button>
         </DialogFooter>
       </DialogContent>

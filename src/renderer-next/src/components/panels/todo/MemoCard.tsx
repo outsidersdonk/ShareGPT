@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils'
 import { isLightColor, memoBg, memoTimeLabel } from './helpers'
 import { useDarkMode } from './useDarkMode'
 import type { Memo } from '@/store/useTasksStore'
+import { useI18n } from '@/hooks/useI18n'
 
 // 便利贴卡片 (参考 Google Keep): 柔和底色 + 标题/正文 + 标签 + 更新时间; 悬停浮起并露出操作。
 // 文字/叠加色按「实际底色亮度」决定深浅, 任意底色都保证可读 (不依赖 app 主题, 避免浅底配浅字)。
@@ -17,6 +18,7 @@ export function MemoCard({
   onTogglePin: (id: string) => void
   onDelete: (id: string) => void
 }) {
+  const { language, t } = useI18n()
   const dark = useDarkMode()
   const bg = memoBg(memo.color, dark)
   const light = isLightColor(bg)
@@ -62,7 +64,7 @@ export function MemoCard({
           hover,
           memo.pinned ? 'text-primary' : cn(subtle, 'opacity-0 group-hover:opacity-100'),
         )}
-        title={memo.pinned ? '取消置顶' : '置顶'}
+        title={memo.pinned ? t('取消置顶', 'Unpin') : t('置顶', 'Pin')}
       >
         <Pin className="size-4" fill={memo.pinned ? 'currentColor' : 'none'} />
       </button>
@@ -83,7 +85,9 @@ export function MemoCard({
           {memo.body}
         </p>
       )}
-      {empty && <p className={cn('pr-7 text-[14px] italic', subtle)}>空便签</p>}
+      {empty && (
+        <p className={cn('pr-7 text-[14px] italic', subtle)}>{t('空便签', 'Empty note')}</p>
+      )}
 
       {memo.tags && memo.tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -98,7 +102,7 @@ export function MemoCard({
       {/* 底部: 更新时间 + 悬停删除 */}
       <div className="mt-3 flex h-5 items-center justify-between">
         <span className={cn('text-[12px] tabular-nums', subtle)}>
-          {memoTimeLabel(memo.updatedAt)}
+          {memoTimeLabel(memo.updatedAt, language)}
         </span>
         <button
           type="button"
@@ -111,7 +115,7 @@ export function MemoCard({
             subtle,
             hover,
           )}
-          title="删除便签"
+          title={t('删除便签', 'Delete note')}
         >
           <Trash2 className="size-3.5" />
         </button>

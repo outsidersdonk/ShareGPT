@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button'
 import { MemoCard } from './MemoCard'
 import { MemoEditor } from './MemoEditor'
 import { useTasksStore } from '@/store/useTasksStore'
+import { useI18n } from '@/hooks/useI18n'
 
 // 备忘录看板: 顶部「新建便签」+ 搜索; 下方瀑布流便签卡片 (置顶浮于最前)。
 export function MemoBoard() {
+  const { t } = useI18n()
   const memos = useTasksStore((s) => s.memos)
   const addMemo = useTasksStore((s) => s.addMemo)
   const toggleMemoPin = useTasksStore((s) => s.toggleMemoPin)
@@ -40,8 +42,8 @@ export function MemoBoard() {
     query.trim() || pinned.length === 0
       ? [{ key: 'all', label: '', items: filtered }]
       : [
-          { key: 'pinned', label: '置顶', items: pinned },
-          { key: 'others', label: '其他', items: others },
+          { key: 'pinned', label: t('置顶', 'Pinned'), items: pinned },
+          { key: 'others', label: t('其他', 'Others'), items: others },
         ].filter((s) => s.items.length > 0)
   const editing = editingId ? (memos.find((m) => m.id === editingId) ?? null) : null
 
@@ -56,14 +58,14 @@ export function MemoBoard() {
       <div className="flex shrink-0 items-center gap-2 px-5 py-3">
         <Button size="sm" onClick={handleNew}>
           <Plus className="size-4" />
-          新建便签
+          {t('新建便签', 'New note')}
         </Button>
         <div className="relative ml-auto w-56">
           <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索便签…"
+            placeholder={t('搜索便签…', 'Search notes…')}
             className="h-10 pl-8 text-base md:text-base"
           />
         </div>
@@ -77,7 +79,12 @@ export function MemoBoard() {
               <StickyNote className="size-7 text-muted-foreground" />
             </div>
             <p className="text-base text-muted-foreground">
-              {query ? '没有匹配的便签' : '还没有便签，点「新建便签」记一笔'}
+              {query
+                ? t('没有匹配的便签', 'No matching notes')
+                : t(
+                    '还没有便签，点「新建便签」记一笔',
+                    'No notes yet. Click "New note" to write one.',
+                  )}
             </p>
           </div>
         ) : (

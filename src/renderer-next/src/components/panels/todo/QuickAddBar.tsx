@@ -4,17 +4,19 @@ import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { parseQuickAdd } from '@/lib/quickadd'
 import type { ParsedQuickAdd } from '@/lib/quickadd'
+import { useI18n } from '@/hooks/useI18n'
 
 // 快速添加输入条 (始终置于任务列表顶部)。
 //  - 边输入边解析, 下方显示识别命中提示 (优先级/标签/日期/时间)
 //  - 回车提交: 把解析结果交给父级建任务; 清空输入
 export function QuickAddBar({
   onAdd,
-  placeholder = '添加任务，试试「明天下午5点写周报 !high #工作」或「下周三开会」',
+  placeholder,
 }: {
   onAdd: (parsed: ParsedQuickAdd) => void
   placeholder?: string
 }) {
+  const { t } = useI18n()
   const [value, setValue] = useState('')
 
   // 实时解析 (仅用于命中提示; 提交时再解析一次保证一致)。
@@ -43,7 +45,13 @@ export function QuickAddBar({
               submit()
             }
           }}
-          placeholder={placeholder}
+          placeholder={
+            placeholder ??
+            t(
+              '添加任务，试试「明天下午5点写周报 !high #工作」或「下周三开会」',
+              'Add a task, e.g. "Write report tomorrow 5pm !high #work" or "Meeting next Wednesday"',
+            )
+          }
           className="h-11 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 md:text-base"
         />
       </div>
@@ -64,7 +72,9 @@ export function QuickAddBar({
               {h.label}
             </span>
           ))}
-          <span className="text-sm text-muted-foreground">→ {preview.title || '(无标题)'}</span>
+          <span className="text-sm text-muted-foreground">
+            → {preview.title || t('(无标题)', '(No title)')}
+          </span>
         </div>
       )}
     </div>
