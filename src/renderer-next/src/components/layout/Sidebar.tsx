@@ -3,7 +3,8 @@ import { ChevronLeft } from 'lucide-react'
 import { format } from 'date-fns'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { NAV, type NavKey } from '@/lib/nav'
+import { NAV, localizeNav, type NavKey } from '@/lib/nav'
+import { useI18n } from '@/hooks/useI18n'
 import { useAppStore } from '@/store/useAppStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTasksStore } from '@/store/useTasksStore'
@@ -24,6 +25,7 @@ export function Sidebar({ hidden = false }: { hidden?: boolean }) {
   const navOrder = useAppStore((s) => s.navOrder)
   const setNavOrder = useAppStore((s) => s.setNavOrder)
   const meta = useAppStore((s) => s.meta)
+  const { language, t } = useI18n()
   const workspaceMode = useAppStore((s) => s.workspaceMode)
   // 管理员可禁止某人用协作聊天: 禁用则隐藏「协作聊天」入口 (服务端不投递消息, 这里只隐藏入口)。
   const chatDisabled = useAuthStore((s) => Boolean(s.profile?.chatDisabled))
@@ -38,13 +40,14 @@ export function Sidebar({ hidden = false }: { hidden?: boolean }) {
         workspaceNavAvailable(workspaceMode, item.key, { chatDisabled }) &&
         !hiddenNav.includes(item.key),
     )
-    if (!navOrder.length) return filtered
+    const localized = filtered.map((item) => localizeNav(item, language))
+    if (!navOrder.length) return localized
     const rank = (k: NavKey) => {
       const i = navOrder.indexOf(k)
       return i >= 0 ? i : navOrder.length + NAV.findIndex((n) => n.key === k)
     }
-    return [...filtered].sort((a, b) => rank(a.key) - rank(b.key))
-  }, [showGemini, showClaude, chatDisabled, hiddenNav, navOrder, workspaceMode])
+    return [...localized].sort((a, b) => rank(a.key) - rank(b.key))
+  }, [showGemini, showClaude, chatDisabled, hiddenNav, navOrder, workspaceMode, language])
 
   // 侧栏在右时: 边框换到左侧, 收起态 Tooltip 弹向左侧 (避免被自身遮挡/出屏)。
   const onRight = sidebarSide === 'right'
@@ -97,7 +100,9 @@ export function Sidebar({ hidden = false }: { hidden?: boolean }) {
 
         <button
           onClick={toggleSidebar}
-          aria-label={collapsed ? '展开侧栏' : '收起侧栏'}
+          aria-label={
+            collapsed ? t('展开侧栏', 'Expand sidebar') : t('收起侧栏', 'Collapse sidebar')
+          }
           className={cn(
             'mt-1 flex shrink-0 items-center rounded-lg py-2.5 text-sidebar-foreground transition-colors hover:bg-sidebar-accent/60',
             'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
@@ -119,7 +124,7 @@ export function Sidebar({ hidden = false }: { hidden?: boolean }) {
               collapsed ? 'w-0 flex-none pointer-events-none opacity-0' : 'flex-1 opacity-100',
             )}
           >
-            收起侧栏
+            {t('收起侧栏', 'Collapse sidebar')}
           </span>
         </button>
 

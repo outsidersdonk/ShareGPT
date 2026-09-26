@@ -7,6 +7,7 @@ import { useClockTick } from '@/hooks/useFocusTimer'
 import { useTasksStore } from '@/store/useTasksStore'
 import { FocusLeaderboard } from './focus/FocusLeaderboard'
 import type { NoiseKind } from '@/lib/noise'
+import { useI18n } from '@/hooks/useI18n'
 
 const PHASES: { key: Phase; label: string }[] = [
   { key: 'focus', label: '专注' },
@@ -26,6 +27,7 @@ function fmt(ms: number): string {
 }
 
 export function FocusPanel() {
+  const { t } = useI18n()
   const init = useFocusStore((s) => s.init)
   const phase = useFocusStore((s) => s.phase)
   const running = useFocusStore((s) => s.running)
@@ -63,8 +65,8 @@ export function FocusPanel() {
   return (
     <PanelScaffold
       icon={Timer}
-      title="专注"
-      hint="番茄钟 · 专注统计 · 团队排名"
+      title={t('专注', 'Focus')}
+      hint={t('番茄钟 · 专注统计 · 团队排名', 'Pomodoro · focus stats · team ranking')}
       toolbar={
         <button
           type="button"

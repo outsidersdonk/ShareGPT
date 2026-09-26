@@ -5,6 +5,7 @@ import { PanelScaffold } from './PanelScaffold'
 import { LogToolbar } from './logs/LogToolbar'
 import { useLogStore } from '@/store/useLogStore'
 import type { LogEntry } from './logs/types'
+import { useI18n } from '@/hooks/useI18n'
 
 // 最多渲染的日志行数(仅 DOM 渲染上限; store 仍按 MAX_LOG_ENTRIES 缓存)。
 const DISPLAY_LIMIT = 500
@@ -15,6 +16,7 @@ const DISPLAY_LIMIT = 500
 // - 顶部工具条: 清空 / 复制全部 / 暂停自动滚动 / 按来源过滤
 // - 容量上限裁剪 (见 useLogStore / MAX_LOG_ENTRIES)
 export function LogsPanel() {
+  const { t } = useI18n()
   const entries = useLogStore((s) => s.entries)
   const clear = useLogStore((s) => s.clear)
   const [autoScroll, setAutoScroll] = useState(true)
@@ -73,7 +75,14 @@ export function LogsPanel() {
   }
 
   return (
-    <PanelScaffold icon={ScrollText} title="运行日志" hint="显示启动、停止和异常信息，方便排查问题">
+    <PanelScaffold
+      icon={ScrollText}
+      title={t('运行日志', 'Logs')}
+      hint={t(
+        '显示启动、停止和异常信息，方便排查问题',
+        'Start, stop and error messages for troubleshooting',
+      )}
+    >
       <div className="flex h-full min-h-0 flex-col">
         <LogToolbar
           sources={sources}
