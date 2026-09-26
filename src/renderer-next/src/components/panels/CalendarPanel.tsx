@@ -15,17 +15,19 @@ import { MonthView } from './calendar/MonthView'
 import { WeekView } from './calendar/WeekView'
 import { DayView } from './calendar/DayView'
 import { EventEditorDialog, type EditorTarget } from './calendar/EventEditorDialog'
+import { useI18n } from '@/hooks/useI18n'
 
-const VIEW_OPTIONS: { value: CalendarView; label: string }[] = [
-  { value: 'month', label: '月' },
-  { value: 'week', label: '周' },
-  { value: 'day', label: '日' },
+const VIEW_OPTIONS: { value: CalendarView; label: string; labelEn: string }[] = [
+  { value: 'month', label: '月', labelEn: 'Month' },
+  { value: 'week', label: '周', labelEn: 'Week' },
+  { value: 'day', label: '日', labelEn: 'Day' },
 ]
 
 // 个人日历主面板。
 // 布局: 左侧日历列表 + 右侧 [工具条(视图切换/导航/今天/新建) + 视图主体]。
 // 状态: cursor(当前定位日期) + view(月/周/日) + editorTarget(编辑器开关)。
 export function CalendarPanel() {
+  const { language, t } = useI18n()
   const init = useCalendarStore((s) => s.init)
   const loaded = useCalendarStore((s) => s.loaded)
   const loading = useCalendarStore((s) => s.loading)
@@ -115,7 +117,7 @@ export function CalendarPanel() {
         const text = typeof reader.result === 'string' ? reader.result : ''
         const parsed = parseIcs(text)
         if (parsed.length === 0) {
-          toast.error('未找到可导入的事件')
+          toast.error(t('未找到可导入的事件', 'No events found to import'))
           return
         }
         const count = importEvents(
@@ -128,17 +130,22 @@ export function CalendarPanel() {
             notes: p.description,
           })),
         )
-        toast.success(`已导入 ${count} 个事件`)
+        toast.success(t(`已导入 ${count} 个事件`, `Imported ${count} events`))
       }
-      reader.onerror = () => toast.error('读取文件失败')
+      reader.onerror = () => toast.error(t('读取文件失败', 'Could not read the file'))
       reader.readAsText(file)
     },
-    [importEvents],
+    [importEvents, t],
   )
 
   if (!loaded)
     return (
-      <PanelScaffold icon={CalendarDays} title="日历" hint="个人日程" scrollable={false}>
+      <PanelScaffold
+        icon={CalendarDays}
+        title={t('日历', 'Calendar')}
+        hint={t('个人日程', 'Personal schedule')}
+        scrollable={false}
+      >
         <LocalDataStatus loading={loading} error={loadError} onRetry={init} />
       </PanelScaffold>
     )
@@ -161,7 +168,7 @@ export function CalendarPanel() {
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            {opt.label}
+            {t(opt.label, opt.labelEn)}
           </button>
         ))}
       </div>
@@ -175,11 +182,11 @@ export function CalendarPanel() {
       />
       <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
         <Upload className="size-4" />
-        导入
+        {t('导入', 'Import')}
       </Button>
       <Button variant="default" size="sm" onClick={handleQuickAdd}>
         <Plus className="size-4" />
-        新建
+        {t('新建', 'New')}
       </Button>
     </div>
   )
@@ -187,8 +194,8 @@ export function CalendarPanel() {
   return (
     <PanelScaffold
       icon={CalendarDays}
-      title="日历"
-      hint="个人日程"
+      title={t('日历', 'Calendar')}
+      hint={t('个人日程', 'Personal schedule')}
       toolbar={toolbar}
       scrollable={false}
     >
@@ -198,17 +205,27 @@ export function CalendarPanel() {
         <div className="flex min-w-0 flex-1 flex-col">
           {/* 导航条: ‹ › + 今天 + 当前时段标签 */}
           <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
-            <Button variant="ghost" size="icon-sm" onClick={() => stepBy(-1)} aria-label="上一页">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => stepBy(-1)}
+              aria-label={t('上一页', 'Previous')}
+            >
               <ChevronLeft className="size-5" />
             </Button>
-            <Button variant="ghost" size="icon-sm" onClick={() => stepBy(1)} aria-label="下一页">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => stepBy(1)}
+              aria-label={t('下一页', 'Next')}
+            >
               <ChevronRight className="size-5" />
             </Button>
             <Button variant="outline" size="sm" onClick={() => setCursor(new Date())}>
-              今天
+              {t('今天', 'Today')}
             </Button>
             <h2 className="ml-1 text-xl font-semibold text-foreground">
-              {periodLabel(cursor, view)}
+              {periodLabel(cursor, view, language)}
             </h2>
           </div>
 
@@ -223,7 +240,7 @@ export function CalendarPanel() {
             )
           ) : (
             <div className="flex flex-1 items-center justify-center text-base text-muted-foreground">
-              加载中…
+              {t('加载中…', 'Loading…')}
             </div>
           )}
         </div>

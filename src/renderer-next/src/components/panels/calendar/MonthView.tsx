@@ -14,9 +14,9 @@ import {
 import { cn } from '@/lib/utils'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { expandEvents, type EventOccurrence } from '@/lib/recurrence'
-import { WEEKDAY_LABELS, hexToRgba, calendarOf, FALLBACK_COLOR } from './helpers'
-
-const WEEK_OPTS = { weekStartsOn: 1 } as const // 周一为首
+import { weekdayLabels, hexToRgba, calendarOf, FALLBACK_COLOR } from './helpers'
+import { timeFormat, weekStartsOn } from '@/lib/i18n'
+import { useI18n } from '@/hooks/useI18n'
 
 // 月视图: 6 行 7 列。表头周一..周日, 当天日期着色圆点, 非本月暗淡, 事件用色块 chip。
 export function MonthView({
@@ -30,6 +30,7 @@ export function MonthView({
   // 点击事件 -> 编辑。
   onPickEvent: (eventId: string) => void
 }) {
+  const { language, t } = useI18n()
   const calendars = useCalendarStore((s) => s.calendars)
   const events = useCalendarStore((s) => s.events)
 
@@ -40,6 +41,8 @@ export function MonthView({
   )
 
   // 网格起止 (本月第一周的周一 ~ 末周的周日)。
+  // 周首随界面语言: 中文周一, English 周日。
+  const WEEK_OPTS = { weekStartsOn: weekStartsOn(language) }
   const gridStart = startOfWeek(startOfMonth(cursor), WEEK_OPTS)
   const gridEnd = endOfWeek(endOfMonth(cursor), WEEK_OPTS)
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd })
@@ -89,7 +92,7 @@ export function MonthView({
     <div className="flex min-h-0 flex-1 flex-col">
       {/* 星期表头 */}
       <div className="grid grid-cols-7 border-b border-border">
-        {WEEKDAY_LABELS.map((w) => (
+        {weekdayLabels(language).map((w) => (
           <div key={w} className="py-2.5 text-center text-sm font-semibold text-muted-foreground">
             {w}
           </div>
@@ -151,10 +154,12 @@ export function MonthView({
                     >
                       {!occ.event.allDay && isStart && (
                         <span className="tabular-nums opacity-80">
-                          {format(new Date(occ.start), 'HH:mm')}
+                          {format(new Date(occ.start), timeFormat(language))}
                         </span>
                       )}
-                      <span className="truncate font-medium">{occ.event.title || '(无标题)'}</span>
+                      <span className="truncate font-medium">
+                        {occ.event.title || t('(无标题)', '(No title)')}
+                      </span>
                     </button>
                   )
                 })}

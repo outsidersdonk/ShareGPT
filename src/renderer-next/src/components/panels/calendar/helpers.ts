@@ -1,6 +1,7 @@
 // 日历视图共用的纯函数: 时间布局、颜色、文案。
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+import type { Language } from '@/lib/i18n'
 import type { Calendar, CalendarEvent } from '@/store/useCalendarStore'
 import type { EventOccurrence } from '@/lib/recurrence'
 
@@ -42,8 +43,11 @@ export function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
-// 当前时段标签 (随视图变化)。
-export function periodLabel(date: Date, view: CalendarView): string {
+// 当前时段标签 (随视图变化)。English 使用美式格式 (September 2026)。
+export function periodLabel(date: Date, view: CalendarView, language: Language = 'zh'): string {
+  if (language === 'en') {
+    return format(date, view === 'day' ? 'EEEE, MMMM d, yyyy' : 'MMMM yyyy')
+  }
   if (view === 'month') return format(date, 'yyyy年 M月', { locale: zhCN })
   if (view === 'day') return format(date, 'yyyy年 M月 d日 EEEE', { locale: zhCN })
   // 周视图: 显示所在周的年月。
@@ -135,16 +139,21 @@ export function calendarOf(calendars: Calendar[], event: CalendarEvent): Calenda
 
 export const FALLBACK_COLOR = '#3b82f6'
 
-// 周一为首的星期表头。
+// 星期表头: 中文周一为首, English 周日为首 (与 weekStartsOn 一致)。
 export const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] as const
+const WEEKDAY_LABELS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
+
+export function weekdayLabels(language: Language): readonly string[] {
+  return language === 'en' ? WEEKDAY_LABELS_EN : WEEKDAY_LABELS
+}
 
 // 重复规则预设 (编辑器下拉)。
 export type RecurrencePreset = 'none' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'
 
-export const RECURRENCE_OPTIONS: { value: RecurrencePreset; label: string }[] = [
-  { value: 'none', label: '不重复' },
-  { value: 'DAILY', label: '每天' },
-  { value: 'WEEKLY', label: '每周' },
-  { value: 'MONTHLY', label: '每月' },
-  { value: 'YEARLY', label: '每年' },
+export const RECURRENCE_OPTIONS: { value: RecurrencePreset; label: string; labelEn: string }[] = [
+  { value: 'none', label: '不重复', labelEn: 'Does not repeat' },
+  { value: 'DAILY', label: '每天', labelEn: 'Daily' },
+  { value: 'WEEKLY', label: '每周', labelEn: 'Weekly' },
+  { value: 'MONTHLY', label: '每月', labelEn: 'Monthly' },
+  { value: 'YEARLY', label: '每年', labelEn: 'Yearly' },
 ]

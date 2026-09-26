@@ -27,6 +27,18 @@ export function weekStartsOn(language: Language): 0 | 1 {
   return language === 'en' ? 0 : 1
 }
 
+// 事件时间: 中文 24 小时制, English 12 小时制 (9:00 AM)。
+export function timeFormat(language: Language): string {
+  return language === 'en' ? 'h:mm a' : 'HH:mm'
+}
+
+// 时间轴整点标签。
+export function hourLabel(hour: number, language: Language): string {
+  if (language !== 'en') return `${String(hour).padStart(2, '0')}:00`
+  const h12 = hour % 12 === 0 ? 12 : hour % 12
+  return `${h12} ${hour < 12 ? 'AM' : 'PM'}`
+}
+
 export function htmlLang(language: Language): string {
   return language === 'en' ? 'en' : 'zh-CN'
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { addDays, format, isToday, startOfDay } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
+import { dateLocale, hourLabel, timeFormat } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { expandEvents, type EventOccurrence } from '@/lib/recurrence'
@@ -13,6 +13,7 @@ import {
   layoutInDay,
   packDayColumns,
 } from './helpers'
+import { useI18n } from '@/hooks/useI18n'
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 
@@ -30,6 +31,7 @@ export function TimeGridView({
   onPickSlot: (slotStart: Date) => void
   onPickEvent: (eventId: string) => void
 }) {
+  const { language, t } = useI18n()
   const calendars = useCalendarStore((s) => s.calendars)
   const events = useCalendarStore((s) => s.events)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -108,7 +110,7 @@ export function TimeGridView({
                   style={{ width: colWidth }}
                 >
                   <span className="text-sm text-muted-foreground">
-                    {format(day, 'EEE', { locale: zhCN })}
+                    {format(day, 'EEE', { locale: dateLocale(language) })}
                   </span>
                   <span
                     className={cn(
@@ -146,7 +148,7 @@ export function TimeGridView({
                           className="truncate rounded px-1.5 py-1 text-left text-sm font-medium hover:opacity-80"
                           style={{ backgroundColor: hexToRgba(color, 0.18), color }}
                         >
-                          {occ.event.title || '(无标题)'}
+                          {occ.event.title || t('(无标题)', '(No title)')}
                         </button>
                       )
                     })}
@@ -170,7 +172,7 @@ export function TimeGridView({
             >
               {h > 0 && (
                 <span className="absolute -top-2.5 right-2 text-sm tabular-nums text-muted-foreground">
-                  {String(h).padStart(2, '0')}:00
+                  {hourLabel(h, language)}
                 </span>
               )}
             </div>
@@ -212,6 +214,7 @@ function DayColumn({
   onPickSlot: (slotStart: Date) => void
   onPickEvent: (eventId: string) => void
 }) {
+  const { language, t } = useI18n()
   const calendars = useCalendarStore((s) => s.calendars)
 
   // 计算布局 + 重叠分列。
@@ -279,10 +282,12 @@ function DayColumn({
               color,
             }}
           >
-            <span className="block truncate font-semibold">{occ.event.title || '(无标题)'}</span>
+            <span className="block truncate font-semibold">
+              {occ.event.title || t('(无标题)', '(No title)')}
+            </span>
             {layout.heightPx > 38 && (
               <span className="block truncate tabular-nums opacity-80">
-                {format(new Date(occ.start), 'HH:mm')}
+                {format(new Date(occ.start), timeFormat(language))}
               </span>
             )}
           </button>
