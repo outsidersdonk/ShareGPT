@@ -97,7 +97,52 @@ interface ParsedDate {
 // 把 ICS 的日期/时间值解析成 ISO。
 //  - 8 位纯数字 (YYYYMMDD) 或 VALUE=DATE -> 全天, 取本地当天 0 点。
 //  - YYYYMMDDTHHMMSSZ -> UTC 时间。
-//  - YYYYMMDDTHHMMSS  -> 裸时间, 按本地时区解释。
+//  - YYYYMMDDTHHMMSS  -> 带 TZID (IANA 名称) 时按该时区解释; 否则/无法识别时按本地时区。
+
+// 把某 IANA 时区下的墙上时间换算为 UTC 毫秒; 时区名无法识别 (如 Windows 名称) 时返回 null。
+function zonedWallTimeToUtc(
+  tz: string,
+  y: number,
+  mo: number,
+  d: number,
+  hh: number,
+  mm: number,
+  ss: number,
+): number | null {
+  let fmt: Intl.DateTimeFormat
+  try {
+    fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+    })
+  } catch {
+    return null
+  }
+  const wall = Date.UTC(y, mo - 1, d, hh, mm, ss)
+  let utc = wall
+  // 两轮修正即可收敛 (第二轮处理夏令时切换附近的偏移变化)。
+  for (let i = 0; i < 2; i++) {
+    const parts: Record<string, number> = {}
+    for (const part of fmt.formatToParts(new Date(utc))) parts[part.type] = Number(part.value)
+    const shown = Date.UTC(
+      parts.year,
+      parts.month - 1,
+      parts.day,
+      parts.hour,
+      parts.minute,
+      parts.second,
+    )
+    utc -= shown - wall
+  }
+  return utc
+}
+
 function parseDate(value: string, params: Record<string, string>): ParsedDate | null {
   const v = value.trim()
   // 全天判定: 显式 VALUE=DATE, 或形如 8 位数字。
@@ -123,9 +168,13 @@ function parseDate(value: string, params: Record<string, string>): ParsedDate | 
   const mm = Number(m[5])
   const ss = Number(m[6] ?? '0')
   const isUtc = m[7] === 'Z'
+  const tz = (params.TZID ?? '').replace(/^"|"$/g, '').trim()
+  const zoned = !isUtc && tz ? zonedWallTimeToUtc(tz, y, mo, d, hh, mm, ss) : null
   const dt = isUtc
     ? new Date(Date.UTC(y, mo - 1, d, hh, mm, ss))
-    : new Date(y, mo - 1, d, hh, mm, ss)
+    : zoned !== null
+      ? new Date(zoned)
+      : new Date(y, mo - 1, d, hh, mm, ss)
   if (Number.isNaN(dt.getTime())) return null
   return { iso: dt.toISOString(), allDay: false }
 }
