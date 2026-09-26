@@ -5,7 +5,10 @@ export interface OnboardingStep {
   body: string
 }
 
-export function buildOnboardingSteps(brand: string): OnboardingStep[] {
+import type { Language } from './i18n'
+
+export function buildOnboardingSteps(brand: string, language: Language = 'zh'): OnboardingStep[] {
+  if (language === 'en') return buildEnglishSteps(brand)
   return [
     {
       title: `欢迎使用 ${brand} 👋`,
@@ -39,6 +42,44 @@ export function buildOnboardingSteps(brand: string): OnboardingStep[] {
     {
       title: '准备就绪 🎉',
       body: '就这些！现在开始上手吧。左侧入口可长按拖动排序；需要时点标题栏右上角的「?」可再次查看本引导。',
+    },
+  ]
+}
+
+function buildEnglishSteps(brand: string): OnboardingStep[] {
+  return [
+    {
+      title: `Welcome to ${brand} 👋`,
+      body: 'A 30-second tour of the main screen. You can skip it at any time.',
+    },
+    {
+      target: 'nav-service',
+      title: 'Network / Proxy',
+      body: 'Set up your proxy exit here. Once started, the embedded AI pages reuse the same proxy automatically.',
+    },
+    {
+      target: 'nav-chat',
+      title: 'Team Chat',
+      body: 'Send messages and files to your team in real time and see who is online. Add emoji in the composer and react to messages; emoji-only messages are shown large and animated.',
+    },
+    {
+      target: 'nav-gpt',
+      title: 'Embedded AI pages',
+      body: 'ChatGPT / Gemini / Claude open right inside the app, so you do not need to switch browsers. Right-click an empty area for a browser-style menu; Ctrl + mouse wheel (or Ctrl with +/-/0) zooms the page.',
+    },
+    {
+      target: 'nav-stats',
+      title: 'Usage',
+      body: "See usage and rankings to understand your team's overall activity.",
+    },
+    {
+      target: 'nav-account',
+      title: 'Find more features here',
+      body: 'Calendar, Team Calendar, Memos / To-do, Notes and Focus are hidden by default. Show the ones you need in "Account → Interface"; team notifications are managed here too. This tour only shows you where they are and does not turn them on.',
+    },
+    {
+      title: 'All set 🎉',
+      body: 'That is it. Enjoy! Long-press a sidebar entry to reorder it, and click "?" at the top right of the title bar to see this tour again.',
     },
   ]
 }
