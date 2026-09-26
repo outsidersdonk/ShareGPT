@@ -24,6 +24,17 @@ async function assertPersonalWorkspace(page) {
   assert.equal(await page.locator('[data-tour="nav-stats"]').count(), 0);
 }
 
+// 月视图星期表头的顺序: 返回表头文本按屏幕从左到右排列后的前两个。
+async function firstWeekdayHeaders(page, labels) {
+  const positions = [];
+  for (const label of labels) {
+    const box = await page.getByText(label, { exact: true }).first().boundingBox();
+    assert.ok(box, `weekday header ${label} must be visible`);
+    positions.push({ label, x: box.x });
+  }
+  return positions.sort((a, b) => a.x - b.x).map((item) => item.label);
+}
+
 async function main() {
   const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "sharegpt-personal-workspace-"));
   const welcomeScreenshot = path.join(temporaryRoot, "workspace-welcome.png");
@@ -49,6 +60,24 @@ async function main() {
     await page.getByText("欢迎来到 ShareGPT", { exact: true }).waitFor({ state: "visible" });
     assert.equal(await page.locator("#account-server").count(), 0);
     await page.screenshot({ path: welcomeScreenshot });
+
+    // 首次设置页即可切换界面语言: 中文为默认与首选, English 第二。
+    const languageGroup = page.getByRole("group", { name: "Language / 语言" });
+    const languageButtons = await languageGroup.getByRole("button").allTextContents();
+    assert.deepEqual(languageButtons, ["中文", "English"]);
+    assert.equal(
+      await languageGroup.getByRole("button", { name: "中文" }).getAttribute("aria-pressed"),
+      "true",
+    );
+    assert.equal(await page.evaluate(() => document.documentElement.lang), "zh-CN");
+    await languageGroup.getByRole("button", { name: "English" }).click();
+    await page.getByText("Welcome to ShareGPT", { exact: true }).waitFor({ state: "visible" });
+    assert.equal(await page.getByRole("button", { name: "Get started" }).count(), 1);
+    assert.equal(await page.evaluate(() => document.documentElement.lang), "en");
+    await languageGroup.getByRole("button", { name: "中文" }).click();
+    await page.getByText("欢迎来到 ShareGPT", { exact: true }).waitFor({ state: "visible" });
+    assert.equal(await page.evaluate(() => document.documentElement.lang), "zh-CN");
+
     await page.getByRole("button", { name: "开始设置", exact: true }).click();
     await page.getByRole("button", { name: /仅在本机使用/ }).waitFor({ state: "visible" });
     assert.equal(await page.getByText("连接团队", { exact: true }).count(), 1);
@@ -191,6 +220,42 @@ async function main() {
     await page.locator('[data-tour="nav-notes"]').waitFor({ state: "visible" });
     await page.locator('[data-tour="nav-calendar"]').click();
     await page.getByRole("button", { name: "今天", exact: true }).waitFor({ state: "visible" });
+    assert.deepEqual(await firstWeekdayHeaders(page, ["周一", "周日"]), ["周一", "周日"]);
+
+    // 界面语言切到 English: 导航与日历随之切换, 周日为首, 并写入 settings.ui.language。
+    await accountNav.click();
+    await page.getByRole("button", { name: "English", exact: true }).click();
+    await page.getByText("Interface", { exact: true }).waitFor({ state: "visible" });
+    assert.equal(await page.evaluate(() => document.documentElement.lang), "en");
+    const savedLanguage = await page.evaluate(async () => {
+      const activePrincipal = await window.api.getSettingsPrincipal();
+      const settings = await window.api.loadSettings({
+        expectedPrincipalId: activePrincipal.principalId,
+        expectedPrincipalGeneration: activePrincipal.generation,
+      });
+      return settings.ui?.language;
+    });
+    assert.equal(savedLanguage, "en");
+    assert.match(await page.locator('[data-tour="nav-calendar"]').innerText(), /Calendar/);
+    await page.locator('[data-tour="nav-calendar"]').click();
+    await page.getByRole("button", { name: "Today", exact: true }).waitFor({ state: "visible" });
+    assert.deepEqual(await firstWeekdayHeaders(page, ["Sun", "Mon"]), ["Sun", "Mon"]);
+    assert.equal(
+      await page
+        .getByText(
+          /^(January|February|March|April|May|June|July|August|September|October|November|December) \d{4}$/,
+        )
+        .count(),
+      1,
+    );
+
+    // 切回中文, 恢复周一为首, 其余中文断言保持不变。
+    await accountNav.click();
+    await page.getByRole("button", { name: "中文", exact: true }).click();
+    await page.getByText("界面设置", { exact: true }).waitFor({ state: "visible" });
+    await page.locator('[data-tour="nav-calendar"]').click();
+    await page.getByRole("button", { name: "今天", exact: true }).waitFor({ state: "visible" });
+    assert.deepEqual(await firstWeekdayHeaders(page, ["周一", "周日"]), ["周一", "周日"]);
     await accountNav.click();
     assert.equal(await page.locator("#ui-show-calendar").getAttribute("aria-checked"), "true");
     assert.equal(
