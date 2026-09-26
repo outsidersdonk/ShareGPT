@@ -70,6 +70,7 @@ import {
   normalizeTranslationPanelWidth,
   resolveTranslationPanelLayout,
 } from '@/lib/translationPanelLayout'
+import { useI18n } from '@/hooks/useI18n'
 
 const TRANSLATION_PANEL_WIDTH_KEY = 'sharegpt.translationPanelWidth'
 
@@ -101,18 +102,35 @@ function normalizeUrlFor(kind: AiKind, url: string): string {
 interface AiMeta {
   title: string
   hint: string
+  hintEn: string
   icon: LucideIcon
 }
 
 const META: Record<AiKind, AiMeta> = {
-  gpt: { title: 'ChatGPT', hint: '内嵌 ChatGPT 网页 · 经代理访问', icon: ChatGPTIcon },
-  gemini: { title: 'Gemini', hint: '内嵌 Gemini 网页 · 经代理访问', icon: GeminiIcon },
-  claude: { title: 'Claude', hint: '内嵌 Claude 网页 · 经代理访问', icon: ClaudeIcon },
+  gpt: {
+    title: 'ChatGPT',
+    hint: '内嵌 ChatGPT 网页 · 经代理访问',
+    hintEn: 'Embedded ChatGPT · through the proxy',
+    icon: ChatGPTIcon,
+  },
+  gemini: {
+    title: 'Gemini',
+    hint: '内嵌 Gemini 网页 · 经代理访问',
+    hintEn: 'Embedded Gemini · through the proxy',
+    icon: GeminiIcon,
+  },
+  claude: {
+    title: 'Claude',
+    hint: '内嵌 Claude 网页 · 经代理访问',
+    hintEn: 'Embedded Claude · through the proxy',
+    icon: ClaudeIcon,
+  },
 }
 
 // 共享 AI 网页工作区。GPT / Gemini 完全同构: 控制条 + 多标签 + 原生 view 宿主 + 遮罩。
 // 真正的 WebContentsView 在主进程, 这里只渲染宿主 div 并同步其矩形定位。
 export function AiWorkspace({ kind }: { kind: AiKind }) {
+  const { t } = useI18n()
   const meta = META[kind]
   const ensureInFlightRef = useRef(new Map<string, Promise<void>>())
   const status = useAppStore((s) => s.status)
@@ -273,7 +291,8 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
           requestId: pending.requestId,
           confirmed,
         })
-        if (showStatus) setFeedback(kind, confirmed ? '已发送' : '已取消发送')
+        if (showStatus)
+          setFeedback(kind, confirmed ? t('已发送', 'Sent') : t('已取消发送', 'Send cancelled'))
       } catch (error) {
         const raw = error instanceof Error ? error.message : String(error)
         const message = raw
@@ -284,7 +303,7 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
         }
       }
     },
-    [activeTabId, environmentId, kind, setFeedback],
+    [activeTabId, environmentId, kind, setFeedback, t],
   )
 
   useEffect(() => {
@@ -427,14 +446,18 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
     setRestartingProxy(true)
     try {
       await api.startSender(sender)
-      toast.success('已加入并重启代理，正在重新检测…')
+      toast.success(
+        t('已加入并重启代理，正在重新检测…', 'Added and restarted the proxy. Checking again…'),
+      )
       window.setTimeout(() => void runProxyCheck(), 1500)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : '重启代理失败')
+      toast.error(
+        err instanceof Error ? err.message : t('重启代理失败', 'Could not restart the proxy'),
+      )
     } finally {
       setRestartingProxy(false)
     }
-  }, [runProxyCheck])
+  }, [runProxyCheck, t])
 
   // 代理检测状态色: 只要有任何域名没走代理(回落) 或会话未走代理/检测失败 -> 直接爆红;
   // 全部走代理才是绿。(按需求: 一旦发现有域名没走代理就红色告警, 提醒补进清单。)
@@ -454,15 +477,15 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
   const personalMode = settings?.sender?.proxy_mode === 'personal'
   const proxyModeLabel = advancedMode
     ? activeEnvironment
-      ? activeRoute?.name || '无可用内置线路'
-      : '未选择环境'
+      ? activeRoute?.name || t('无可用内置线路', 'No built-in route available')
+      : t('未选择环境', 'No environment selected')
     : managedDefaultRouteId
-      ? managedDefaultRoute?.name || '等待管理员线路'
+      ? managedDefaultRoute?.name || t('等待管理员线路', 'Waiting for the admin route')
       : personalMode
-        ? '个人代理'
+        ? t('个人代理', 'Personal proxy')
         : airportMode
-          ? `机场${settings?.sender?.airport_name ? ' · ' + safeText(settings.sender.airport_name) : ''}`
-          : '统一代理'
+          ? `${t('机场', 'Airport')}${settings?.sender?.airport_name ? ' · ' + safeText(settings.sender.airport_name) : ''}`
+          : t('统一代理', 'Shared proxy')
 
   // 视图运行态 (供遮罩/导航按钮判断)。
   const view = {
@@ -627,7 +650,11 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
     if (kind !== 'claude') return
     const url = normalizeHttpUrl(addressValue, { assumeHttps: true })
     if (!url) {
-      setFeedback(kind, '请输入有效的 HTTP 或 HTTPS 网址', 'error')
+      setFeedback(
+        kind,
+        t('请输入有效的 HTTP 或 HTTPS 网址', 'Enter a valid HTTP or HTTPS address'),
+        'error',
+      )
       return
     }
 
@@ -647,6 +674,7 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
     }
   }, [
     kind,
+    t,
     addressValue,
     environmentId,
     setFeedback,
@@ -697,34 +725,42 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
   const Icon = meta.icon
   const runtimeLabel =
     advancedMode && !activeEnvironment
-      ? '暂无环境'
+      ? t('暂无环境', 'No environment')
       : !networkReady
-        ? '等待线路'
+        ? t('等待线路', 'Waiting for route')
         : !activeTabId
-          ? '暂无会话'
+          ? t('暂无会话', 'No session')
           : view.loading
-            ? '正在加载'
+            ? t('正在加载', 'Loading')
             : view.initialized
-              ? '已打开'
-              : '准备打开'
+              ? t('已打开', 'Open')
+              : t('准备打开', 'Getting ready')
 
-  const overlay = resolveOverlay(kind, {
-    networkReady,
-    advancedMode,
-    hasEnvironment: !advancedMode || Boolean(activeEnvironment),
-    hasRoute: !advancedMode || Boolean(activeRoute),
-    routeLabel: proxyModeLabel,
-    hasTab: Boolean(activeTabId),
-    initialized: view.initialized,
-    proxyHost,
-    proxyPort,
-  })
+  const overlay = resolveOverlay(
+    kind,
+    {
+      networkReady,
+      advancedMode,
+      hasEnvironment: !advancedMode || Boolean(activeEnvironment),
+      hasRoute: !advancedMode || Boolean(activeRoute),
+      routeLabel: proxyModeLabel,
+      hasTab: Boolean(activeTabId),
+      initialized: view.initialized,
+      proxyHost,
+      proxyPort,
+    },
+    t,
+  )
 
   return (
     <PanelScaffold
       icon={Icon}
       title={meta.title}
-      hint={advancedMode ? `独立环境 · ${proxyModeLabel}` : meta.hint}
+      hint={
+        advancedMode
+          ? `${t('独立环境', 'Separate environment')} · ${proxyModeLabel}`
+          : t(meta.hint, meta.hintEn)
+      }
       hideHeader={aiHeaderHidden}
       scrollable={false}
       toolbar={
@@ -748,7 +784,7 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
               variant="ghost"
               size="icon"
               className="size-8"
-              title="主页"
+              title={t('主页', 'Home')}
               disabled={!networkReady}
               onClick={() => void goHome()}
             >
@@ -758,7 +794,7 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
               variant="ghost"
               size="icon"
               className="size-8"
-              title="后退"
+              title={t('后退', 'Back')}
               disabled={!view.canGoBack}
               onClick={() => void navigate('back')}
             >
@@ -768,7 +804,7 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
               variant="ghost"
               size="icon"
               className="size-8"
-              title="前进"
+              title={t('前进', 'Forward')}
               disabled={!view.canGoForward}
               onClick={() => void navigate('forward')}
             >
@@ -778,7 +814,7 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
               variant="ghost"
               size="icon"
               className="size-8"
-              title="刷新"
+              title={t('刷新', 'Reload')}
               disabled={!networkReady}
               onClick={() => void navigate('reload')}
             >
@@ -802,12 +838,12 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
                 {environments.length > 0 && (
                   <select
                     value={environmentId}
-                    aria-label="当前 AI 环境"
-                    title="当前 AI 环境"
+                    aria-label={t('当前 AI 环境', 'Current AI environment')}
+                    title={t('当前 AI 环境', 'Current AI environment')}
                     className="h-8 max-w-36 rounded-md border border-input bg-background px-2 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onChange={(event) =>
                       void selectEnvironment(event.target.value).catch(() =>
-                        toast.error('切换环境失败'),
+                        toast.error(t('切换环境失败', 'Could not switch environment')),
                       )
                     }
                   >
@@ -825,7 +861,11 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
                     'size-8',
                     environmentPanelOpen && 'bg-accent text-accent-foreground',
                   )}
-                  title={environments.length ? '管理环境与线路' : '新建 AI 环境'}
+                  title={
+                    environments.length
+                      ? t('管理环境与线路', 'Manage environments and routes')
+                      : t('新建 AI 环境', 'New AI environment')
+                  }
                   onClick={() => setEnvironmentPanelOpen((open) => !open)}
                 >
                   <SlidersHorizontal className="size-4" />
@@ -837,8 +877,16 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
                 variant="ghost"
                 size="icon"
                 className={cn('size-8', webAddressOpen && 'bg-accent text-accent-foreground')}
-                title={webAddressOpen ? '收起网址输入' : '打开网页'}
-                aria-label={webAddressOpen ? '收起网址输入' : '打开网页'}
+                title={
+                  webAddressOpen
+                    ? t('收起网址输入', 'Hide address bar')
+                    : t('打开网页', 'Open a web page')
+                }
+                aria-label={
+                  webAddressOpen
+                    ? t('收起网址输入', 'Hide address bar')
+                    : t('打开网页', 'Open a web page')
+                }
                 aria-pressed={webAddressOpen}
                 disabled={!networkReady}
                 onClick={() => setWebAddressOpen((open) => !open)}
@@ -848,7 +896,7 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
             )}
             <Badge
               variant="outline"
-              title="当前网络线路"
+              title={t('当前网络线路', 'Current network route')}
               className={cn(
                 'h-7 gap-1 px-2 font-normal',
                 airportMode ? 'border-primary/50 text-primary' : 'text-muted-foreground',
@@ -867,8 +915,14 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
               )}
               title={
                 proxyTone === 'bad'
-                  ? `警告: 有 ${fallbackCount} 个域名没走代理！点击查看`
-                  : '检测此页面流量是否全部经代理'
+                  ? t(
+                      `警告: 有 ${fallbackCount} 个域名没走代理！点击查看`,
+                      `Warning: ${fallbackCount} domains bypassed the proxy! Click to view`,
+                    )
+                  : t(
+                      '检测此页面流量是否全部经代理',
+                      "Check whether all of this page's traffic goes through the proxy",
+                    )
               }
               disabled={!networkReady}
               onClick={toggleProxyPanel}
@@ -881,7 +935,7 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
                 // 未检测(前 20s / 未点击): 中性默认色 (夜间白 / 白天黑)。
                 <ShieldCheck className="size-4 text-foreground" />
               )}
-              <span className="text-xs font-medium">代理检测</span>
+              <span className="text-xs font-medium">{t('代理检测', 'Proxy check')}</span>
               {proxyTone === 'bad' && fallbackCount > 0 && (
                 <span className="ml-0.5 grid min-w-4 animate-pulse place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
                   {fallbackCount}
@@ -893,8 +947,16 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
                 variant="ghost"
                 size="icon"
                 className={cn('size-8', translationOpen && 'bg-accent text-accent-foreground')}
-                title={translationOpen ? '关闭翻译侧栏' : '打开翻译侧栏'}
-                aria-label={translationOpen ? '关闭翻译侧栏' : '打开翻译侧栏'}
+                title={
+                  translationOpen
+                    ? t('关闭翻译侧栏', 'Close translation panel')
+                    : t('打开翻译侧栏', 'Open translation panel')
+                }
+                aria-label={
+                  translationOpen
+                    ? t('关闭翻译侧栏', 'Close translation panel')
+                    : t('打开翻译侧栏', 'Open translation panel')
+                }
                 aria-pressed={translationOpen}
                 onClick={() => toggleTranslation(kind, activeTabId, environmentId)}
               >
@@ -905,7 +967,14 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
               variant="ghost"
               size="icon"
               className="size-8"
-              title={sidebarHidden ? '显示侧栏' : '隐藏侧栏 (只看网页, 按 Esc 恢复)'}
+              title={
+                sidebarHidden
+                  ? t('显示侧栏', 'Show sidebar')
+                  : t(
+                      '隐藏侧栏 (只看网页, 按 Esc 恢复)',
+                      'Hide sidebar (page only, press Esc to restore)',
+                    )
+              }
               onClick={toggleSidebarHidden}
             >
               {sidebarHidden ? (
@@ -918,8 +987,16 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
               variant="ghost"
               size="icon"
               className="size-8"
-              title={aiHeaderHidden ? '显示顶部信息栏' : '隐藏顶部信息栏 (按 Esc 恢复)'}
-              aria-label={aiHeaderHidden ? '显示顶部信息栏' : '隐藏顶部信息栏'}
+              title={
+                aiHeaderHidden
+                  ? t('显示顶部信息栏', 'Show header')
+                  : t('隐藏顶部信息栏 (按 Esc 恢复)', 'Hide header (press Esc to restore)')
+              }
+              aria-label={
+                aiHeaderHidden
+                  ? t('显示顶部信息栏', 'Show header')
+                  : t('隐藏顶部信息栏', 'Hide header')
+              }
               onClick={toggleAiHeaderHidden}
             >
               {aiHeaderHidden ? (
@@ -932,7 +1009,11 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
               variant="ghost"
               size="icon"
               className="size-8"
-              title={isFullscreen ? '退出全屏 (F11)' : '全屏 (F11)'}
+              title={
+                isFullscreen
+                  ? t('退出全屏 (F11)', 'Exit full screen (F11)')
+                  : t('全屏 (F11)', 'Full screen (F11)')
+              }
               onClick={toggleFullscreen}
             >
               {isFullscreen ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
@@ -973,8 +1054,8 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              placeholder="输入网址"
-              aria-label="网页地址"
+              placeholder={t('输入网址', 'Enter an address')}
+              aria-label={t('网页地址', 'Web address')}
               disabled={!networkReady}
               className="h-8 min-w-0 flex-1 font-mono text-xs"
             />
@@ -983,8 +1064,8 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
               variant="ghost"
               size="icon"
               className="size-8 shrink-0"
-              title="在新标签页打开"
-              aria-label="在新标签页打开"
+              title={t('在新标签页打开', 'Open in new tab')}
+              aria-label={t('在新标签页打开', 'Open in new tab')}
               disabled={!networkReady || !addressValue.trim()}
             >
               <ArrowUpRight className="size-4" />
@@ -996,12 +1077,14 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
         {kind === 'claude' && !settings?.ui?.claude_notice_dismissed && (
           <div className="flex shrink-0 items-start gap-2 border-b border-amber-500/40 bg-amber-500/10 px-4 py-1.5 text-xs text-amber-700 dark:text-amber-300">
             <span className="min-w-0 flex-1">
-              如果不使用
-              Claude，建议不要打开/停留在此页面，以免触发潜在的网络问题。需要时再打开即可。
+              {t(
+                '如果不使用 Claude，建议不要打开/停留在此页面，以免触发潜在的网络问题。需要时再打开即可。',
+                'If you are not using Claude, avoid opening or staying on this page to prevent possible network issues. Open it only when needed.',
+              )}
             </span>
             <button
               type="button"
-              title="关闭提示"
+              title={t('关闭提示', 'Dismiss')}
               onClick={() =>
                 void useAppStore.getState().patchSection('ui', { claude_notice_dismissed: true })
               }
@@ -1025,8 +1108,8 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
             <span className="min-w-0 flex-1 break-words">{feedback.text}</span>
             <button
               type="button"
-              title="关闭提示"
-              aria-label={`关闭 ${meta.title} 提示`}
+              title={t('关闭提示', 'Dismiss')}
+              aria-label={t(`关闭 ${meta.title} 提示`, `Dismiss ${meta.title} notice`)}
               onClick={() => setFeedback(kind, '')}
               className={cn(
                 'shrink-0 rounded p-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -1044,8 +1127,10 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
           <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-amber-500/45 bg-amber-500/10 px-4 py-2 text-xs text-amber-800 dark:text-amber-200">
             <ShieldAlert className="size-4 shrink-0" />
             <span className="min-w-48 flex-1">
-              当前内容可能不是网页接收语言（
-              {pendingComposerConfirmation.targetLanguage.toUpperCase()}），是否仍要发送？
+              {t(
+                `当前内容可能不是网页接收语言（${pendingComposerConfirmation.targetLanguage.toUpperCase()}），是否仍要发送？`,
+                `This text may not be in the page's expected language (${pendingComposerConfirmation.targetLanguage.toUpperCase()}). Send anyway?`,
+              )}
             </span>
             <Button
               variant="ghost"
@@ -1053,21 +1138,21 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
               className="h-7"
               onClick={() => void resolveComposerConfirmation(false)}
             >
-              取消
+              {t('取消', 'Cancel')}
             </Button>
             <Button
               size="sm"
               className="h-7"
               onClick={() => void resolveComposerConfirmation(true)}
             >
-              发送
+              {t('发送', 'Send')}
             </Button>
             <Button
               variant="ghost"
               size="icon"
               className="size-7"
-              title="关闭发送提示"
-              aria-label="关闭发送提示"
+              title={t('关闭发送提示', 'Dismiss send prompt')}
+              aria-label={t('关闭发送提示', 'Dismiss send prompt')}
               onClick={() => void resolveComposerConfirmation(false, false)}
             >
               <X className="size-3.5" />
@@ -1110,14 +1195,20 @@ export function AiWorkspace({ kind }: { kind: AiKind }) {
           {translationOpen && translationLayout.mode === 'split' && (
             <div
               role="separator"
-              aria-label="调整翻译栏宽度"
+              aria-label={t('调整翻译栏宽度', 'Resize translation panel')}
               aria-orientation="vertical"
               aria-valuemin={TRANSLATION_PANEL_MIN_WIDTH}
               aria-valuemax={translationLayout.maximumPanelWidth}
               aria-valuenow={translationLayout.panelWidth}
               tabIndex={0}
               className="group relative w-1.5 shrink-0 cursor-col-resize bg-border/35 outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-border hover:after:w-0.5 hover:after:bg-primary focus-visible:after:w-0.5 focus-visible:after:bg-ring"
-              title="拖动调整翻译栏宽度，双击恢复默认"
+              title={t(
+                t(
+                  '拖动调整翻译栏宽度，双击恢复默认',
+                  'Drag to resize the translation panel; double-click to reset',
+                ),
+                'Drag to resize the translation panel; double-click to reset',
+              )}
               onDoubleClick={() => setTranslationWidth(TRANSLATION_PANEL_DEFAULT_WIDTH, true)}
               onKeyDown={(event) => {
                 if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
@@ -1194,6 +1285,7 @@ function resolveOverlay(
     proxyHost: string
     proxyPort: string
   },
+  t: (zh: string, en: string) => string,
 ): { title: string; text: string } | null {
   const {
     networkReady,
@@ -1210,44 +1302,65 @@ function resolveOverlay(
 
   if (!hasEnvironment) {
     return {
-      title: `新建 ${label} 环境`,
-      text: '点击上方环境管理按钮，新建一个独立登录环境。',
+      title: t(`新建 ${label} 环境`, `Create a ${label} environment`),
+      text: t(
+        '点击上方环境管理按钮，新建一个独立登录环境。',
+        'Use the environment button above to create a separate sign-in environment.',
+      ),
     }
   }
 
   if (!hasRoute) {
     return {
-      title: '没有可用的内置线路',
-      text: '请先配置统一代理或由管理员下发节点，然后重新开启内置代理。',
+      title: t('没有可用的内置线路', 'No built-in route available'),
+      text: t(
+        '请先配置统一代理或由管理员下发节点，然后重新开启内置代理。',
+        'Set up the shared proxy or get a node from your admin, then start the built-in proxy again.',
+      ),
     }
   }
 
   if (!networkReady) {
     return {
-      title: '当前线路尚未就绪',
+      title: t('当前线路尚未就绪', 'The route is not ready yet'),
       text: advancedMode
-        ? `${routeLabel} 由 ShareGPT 内置 sing-box 提供，请先在「网络 / 代理」中开启代理。`
-        : `${routeLabel} 使用 ${proxyHost}:${proxyPort}。请先启动对应的本机代理。`,
+        ? t(
+            `${routeLabel} 由 ShareGPT 内置 sing-box 提供，请先在「网络 / 代理」中开启代理。`,
+            `${routeLabel} is provided by ShareGPT's built-in sing-box. Start the proxy in "Network / Proxy" first.`,
+          )
+        : t(
+            `${routeLabel} 使用 ${proxyHost}:${proxyPort}。请先启动对应的本机代理。`,
+            `${routeLabel} uses ${proxyHost}:${proxyPort}. Start that local proxy first.`,
+          ),
     }
   }
 
   if (!hasTab) {
     return {
-      title: '当前没有打开的网页标签',
-      text: `请点击上方的 + 按钮，新建一个 ${label} 标签页。`,
+      title: t('当前没有打开的网页标签', 'No page tab is open'),
+      text: t(
+        `请点击上方的 + 按钮，新建一个 ${label} 标签页。`,
+        `Click the + button above to open a new ${label} tab.`,
+      ),
     }
   }
 
   if (!initialized) {
     if (kind === 'gemini') {
       return {
-        title: '准备打开 Gemini',
-        text: '正在初始化内置页面并连接本地代理。Google 登录可能会跳转到账号验证页面。',
+        title: t('准备打开 Gemini', 'Opening Gemini'),
+        text: t(
+          '正在初始化内置页面并连接本地代理。Google 登录可能会跳转到账号验证页面。',
+          'Starting the embedded page and connecting to the local proxy. Google sign-in may redirect to an account check page.',
+        ),
       }
     }
     return {
-      title: `准备打开 ${label}`,
-      text: '正在初始化内置页面并连接本地代理。第一次进入可能稍慢。',
+      title: t(`准备打开 ${label}`, `Opening ${label}`),
+      text: t(
+        '正在初始化内置页面并连接本地代理。第一次进入可能稍慢。',
+        'Starting the embedded page and connecting to the local proxy. The first time may be slower.',
+      ),
     }
   }
 
