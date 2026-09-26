@@ -7,7 +7,7 @@ import { useI18n } from '@/hooks/useI18n'
 //  synced=已同步, syncing=同步中, local=仅本地(未登录/服务器不支持), error=同步出错, off=未启用。
 export function SyncBadge({ kind, className }: { kind: SyncKind; className?: string }) {
   const state = useSyncStatus((s) => s[kind])
-  const { t } = useI18n()
+  const { language, t } = useI18n()
 
   const meta = {
     synced: { Icon: Cloud, text: t('云端已同步', 'Synced'), cls: 'text-emerald-500' },
@@ -33,7 +33,10 @@ export function SyncBadge({ kind, className }: { kind: SyncKind; className?: str
       className={cn('inline-flex items-center gap-1.5 text-sm', meta.cls, className)}
     >
       <Icon className={cn('size-4', state === 'syncing' && 'animate-spin')} />
-      <span className="hidden sm:inline">{meta.text}</span>
+      {/* English 文案较长: 窄窗口 (<1024px) 只显示图标, 把空间留给面板标题; 悬停仍有完整说明。 */}
+      <span className={language === 'en' ? 'hidden lg:inline' : 'hidden sm:inline'}>
+        {meta.text}
+      </span>
     </span>
   )
 }
