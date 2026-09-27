@@ -3,6 +3,7 @@ import { Copy, Pause, Play, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { sourceLabelOf } from './types'
+import { useI18n } from '@/hooks/useI18n'
 
 // 日志面板顶部工具条: 清空 / 复制全部 / 暂停自动滚动 / 按来源过滤。
 export function LogToolbar({
@@ -26,50 +27,57 @@ export function LogToolbar({
   count: number
   filteredCount: number
 }) {
+  const { language, t } = useI18n()
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card/40 px-4 py-2">
       {/* 来源过滤: 仅当出现过多个来源时显示 */}
       {sources.length > 1 && (
         <div className="flex flex-wrap items-center gap-1">
           <FilterChip active={activeSource === null} onClick={() => onSourceChange(null)}>
-            全部
+            {t('全部', 'All')}
           </FilterChip>
           {sources.map((src) => (
             <FilterChip key={src} active={activeSource === src} onClick={() => onSourceChange(src)}>
-              {sourceLabelOf(src)}
+              {sourceLabelOf(src, language)}
             </FilterChip>
           ))}
         </div>
       )}
 
       <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-        {activeSource === null ? `${count} 行` : `${filteredCount} / ${count} 行`}
+        {activeSource === null
+          ? t(`${count} 行`, `${count} lines`)
+          : t(`${filteredCount} / ${count} 行`, `${filteredCount} / ${count} lines`)}
       </span>
 
       <Button
         variant={autoScroll ? 'ghost' : 'secondary'}
         size="sm"
         onClick={onToggleAutoScroll}
-        title={autoScroll ? '暂停自动滚动' : '恢复自动滚动'}
+        title={
+          autoScroll
+            ? t('暂停自动滚动', 'Pause auto-scroll')
+            : t('恢复自动滚动', 'Resume auto-scroll')
+        }
       >
         {autoScroll ? <Pause /> : <Play />}
-        {autoScroll ? '自动滚动' : '已暂停'}
+        {autoScroll ? t('自动滚动', 'Auto-scroll') : t('已暂停', 'Paused')}
       </Button>
 
-      <Button variant="ghost" size="sm" onClick={onCopy} title="复制全部日志">
+      <Button variant="ghost" size="sm" onClick={onCopy} title={t('复制全部日志', 'Copy all logs')}>
         <Copy />
-        复制
+        {t('复制', 'Copy')}
       </Button>
 
       <Button
         variant="ghost"
         size="sm"
         onClick={onClear}
-        title="清空日志"
+        title={t('清空日志', 'Clear logs')}
         className="text-muted-foreground hover:text-destructive"
       >
         <Trash2 />
-        清空
+        {t('清空', 'Clear')}
       </Button>
     </div>
   )
