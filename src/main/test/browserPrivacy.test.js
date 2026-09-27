@@ -142,6 +142,32 @@ test("出口检测必须由两条链路确认同一个 IP", async () => {
   assert.strictEqual(detected.countryCode, "US");
   assert.throws(() => normalizeDetectedEnvironment(geo, { ip: "198.51.100.2" }), /出口 IP 不一致/);
 
+  // NAT 地址池: 同一 /24、国家一致时接受, 仍以位置服务的 IP 为准。
+  const pooled = normalizeDetectedEnvironment(geo, { ip: "203.0.113.77", loc: "US" });
+  assert.strictEqual(pooled.ip, "203.0.113.10");
+  assert.throws(
+    () => normalizeDetectedEnvironment(geo, { ip: "203.0.113.77", loc: "DE" }),
+    /出口 IP 不一致/,
+  );
+  assert.throws(() => normalizeDetectedEnvironment(geo, { ip: "203.0.113.77" }), /出口 IP 不一致/);
+  assert.throws(
+    () => normalizeDetectedEnvironment(geo, { ip: "203.0.114.10", loc: "US" }),
+    /出口 IP 不一致/,
+  );
+  assert.throws(
+    () => normalizeDetectedEnvironment(geo, { ip: "2001:db8::10", loc: "US" }),
+    /出口 IP 不一致/,
+  );
+  const v6 = { ...geo, ip: "2001:db8:abcd:1::10" };
+  assert.strictEqual(
+    normalizeDetectedEnvironment(v6, { ip: "2001:db8:abcd:ff::1", loc: "US" }).ip,
+    "2001:db8:abcd:1::10",
+  );
+  assert.throws(
+    () => normalizeDetectedEnvironment(v6, { ip: "2001:db8:abce::1", loc: "US" }),
+    /出口 IP 不一致/,
+  );
+
   const viaInjectedTransport = await detectProxyEnvironment(1080, {
     agent: {},
     fetchText: async (url) =>
