@@ -510,6 +510,23 @@ function canonicalIp(value) {
   }
 }
 
+// 返回地址所在的出口网段 (IPv4 /24、IPv6 /48), 用于识别同一出口 NAT 地址池里的不同 IP。
+function egressPrefix(ip) {
+  const version = net.isIP(ip);
+  if (version === 4) return `4:${ip.split(".").slice(0, 3).join(".")}`;
+  if (version !== 6) return "";
+  const [head, tail = ""] = ip.split("::");
+  const headParts = head ? head.split(":") : [];
+  const tailParts = tail ? tail.split(":") : [];
+  const groups = ip.includes("::")
+    ? [...headParts, ...Array(8 - headParts.length - tailParts.length).fill("0"), ...tailParts]
+    : headParts;
+  return `6:${groups
+    .slice(0, 3)
+    .map((group) => group.padStart(4, "0").toLowerCase())
+    .join(":")}`;
+}
+
 function parseCloudflareTrace(text) {
   const values = {};
   for (const line of String(text || "").split(/\r?\n/)) {
@@ -526,7 +543,19 @@ function normalizeDetectedEnvironment(geo, trace) {
   }
   const geoIp = canonicalIp(geo.ip);
   const traceIp = canonicalIp(trace.ip);
-  if (!geoIp || !traceIp || geoIp !== traceIp) {
+  // 出口使用 NAT 地址池 (云服务器、运营商级 NAT、部分商业代理) 时, 同一出口的不同连接
+  // 会从同一网段的不同 IP 出网。IP 相同直接通过; 否则要求同协议族同网段 (IPv4 /24、IPv6 /48),
+  // 且两条链路报告的国家一致。直连泄漏会来自本机运营商的其它网段, 仍被拒绝。
+  const traceCountry = safeText(trace.loc, 2).toUpperCase();
+  const samePoolSameCountry = Boolean(
+    geoIp &&
+    traceIp &&
+    egressPrefix(geoIp) &&
+    egressPrefix(geoIp) === egressPrefix(traceIp) &&
+    traceCountry &&
+    traceCountry === safeText(geo.country_code, 2).toUpperCase(),
+  );
+  if (!geoIp || !traceIp || (geoIp !== traceIp && !samePoolSameCountry)) {
     throw new Error("两条独立检测链路返回的出口 IP 不一致，已拒绝更新环境");
   }
   const timezone = validTimezone(geo?.timezone?.id, "");
