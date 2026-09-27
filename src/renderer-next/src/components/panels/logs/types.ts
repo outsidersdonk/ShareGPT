@@ -24,7 +24,17 @@ export const SOURCE_LABELS: Record<string, string> = {
   'receiver-frpc': '映射服务',
 }
 
-export function sourceLabelOf(source: string): string {
+const SOURCE_LABELS_EN: Record<string, string> = {
+  app: 'System',
+  sender: 'Proxy',
+  receiver: 'Receiver',
+  collab: 'Account service',
+  'receiver-singbox': 'Exit',
+  'receiver-frpc': 'Port mapping',
+}
+
+export function sourceLabelOf(source: string, language: 'zh' | 'en' = 'zh'): string {
+  if (language === 'en') return SOURCE_LABELS_EN[source] || source || 'System'
   return SOURCE_LABELS[source] || source || '系统'
 }
 

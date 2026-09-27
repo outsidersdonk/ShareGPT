@@ -55,3 +55,9 @@ export function builtinName(
 export function htmlLang(language: Language): string {
   return language === 'en' ? 'en' : 'zh-CN'
 }
+
+// 非组件代码 (如计时器 store) 读取当前界面语言: setLanguage 会同步 <html lang>。
+export function currentLanguage(): Language {
+  if (typeof document === 'undefined') return 'zh'
+  return document.documentElement.lang === 'en' ? 'en' : 'zh'
+}

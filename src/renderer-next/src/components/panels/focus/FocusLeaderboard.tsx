@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useChatStore } from '@/store/useChatStore'
+import { useI18n } from '@/hooks/useI18n'
 
 interface Row {
   username: string
@@ -13,6 +14,7 @@ type Range = 'today' | 'week'
 
 // 团队专注排名: 服务端按群聚合每人专注时长/番茄数。服务端未部署该接口时优雅降级。
 export function FocusLeaderboard() {
+  const { t } = useI18n()
   const serverUrl = useChatStore((s) => s.identity.serverUrl)
   const token = useChatStore((s) => s.identity.token)
   const username = useChatStore((s) => s.identity.username)
@@ -52,7 +54,7 @@ export function FocusLeaderboard() {
     <div className="rounded-xl border border-border bg-card/40 p-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="flex items-center gap-1.5 text-sm font-medium">
-          <Trophy className="size-4 text-amber-500" /> 团队专注榜
+          <Trophy className="size-4 text-amber-500" /> {t('团队专注榜', 'Team focus ranking')}
         </p>
         <div className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 p-0.5 text-xs">
           {(['today', 'week'] as Range[]).map((r) => (
@@ -65,19 +67,25 @@ export function FocusLeaderboard() {
                 range === r ? 'bg-background shadow-sm' : 'text-muted-foreground',
               )}
             >
-              {r === 'today' ? '今日' : '本周'}
+              {r === 'today' ? t('今日', 'Today') : t('本周', 'This week')}
             </button>
           ))}
         </div>
       </div>
       {state === 'offline' ? (
-        <p className="py-3 text-center text-xs text-muted-foreground">登录协作群后查看团队排名</p>
+        <p className="py-3 text-center text-xs text-muted-foreground">
+          {t('登录协作群后查看团队排名', 'Sign in to a team to see the ranking')}
+        </p>
       ) : state === 'unsupported' ? (
-        <p className="py-3 text-center text-xs text-muted-foreground">该群服务端尚未启用专注排名</p>
+        <p className="py-3 text-center text-xs text-muted-foreground">
+          {t('该群服务端尚未启用专注排名', 'This team server has not enabled focus ranking')}
+        </p>
       ) : state === 'loading' ? (
-        <p className="py-3 text-center text-xs text-muted-foreground">加载中…</p>
+        <p className="py-3 text-center text-xs text-muted-foreground">{t('加载中…', 'Loading…')}</p>
       ) : !rows || rows.length === 0 ? (
-        <p className="py-3 text-center text-xs text-muted-foreground">还没有专注记录</p>
+        <p className="py-3 text-center text-xs text-muted-foreground">
+          {t('还没有专注记录', 'No focus sessions yet')}
+        </p>
       ) : (
         <div className="space-y-1">
           {rows.map((r, i) => (
@@ -104,7 +112,7 @@ export function FocusLeaderboard() {
               </span>
               <span className="min-w-0 flex-1 truncate">{r.displayName || r.username}</span>
               <span className="shrink-0 tabular-nums text-muted-foreground">
-                {r.minutes} 分 · {r.count} 🍅
+                {t(`${r.minutes} 分`, `${r.minutes} min`)} · {r.count} 🍅
               </span>
             </div>
           ))}
