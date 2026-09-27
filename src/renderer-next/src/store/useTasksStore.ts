@@ -1,8 +1,9 @@
 import { create } from 'zustand'
-import { addDays, addMonths, addWeeks, addYears, format, parseISO, startOfDay } from 'date-fns'
+import { addDays, format, parseISO, startOfDay } from 'date-fns'
 import { userDataApiFor } from '@/lib/api'
 import { assertUserDataWritable } from '@/lib/userDataTransitionState'
 import { coalesceInFlight } from '@/lib/inFlightRequest'
+import { advanceRepeat } from '@/lib/taskRepeat'
 import type { TasksStoreFile } from '@/types/api'
 import { createPrincipalDebouncedSave } from '@/lib/principalDebouncedSave'
 import {
@@ -31,6 +32,8 @@ export type RepeatFreq = 'daily' | 'weekly' | 'monthly' | 'yearly'
 export interface Repeat {
   freq: RepeatFreq
   interval: number
+  // 按月/按年重复的原始日 (1-31), 由完成推进时记录, 用于月末不漂移。
+  anchorDay?: number
 }
 
 export interface Subtask {
@@ -127,7 +130,14 @@ function parseRepeat(v: unknown): Repeat | null {
   if (!isObj(v)) return null
   const { freq, interval } = v
   if (freq !== 'daily' && freq !== 'weekly' && freq !== 'monthly' && freq !== 'yearly') return null
-  return { freq, interval: typeof interval === 'number' && interval > 0 ? Math.floor(interval) : 1 }
+  const { anchorDay } = v
+  return {
+    freq,
+    interval: typeof interval === 'number' && interval > 0 ? Math.floor(interval) : 1,
+    ...(Number.isInteger(anchorDay) && (anchorDay as number) >= 1 && (anchorDay as number) <= 31
+      ? { anchorDay: anchorDay as number }
+      : {}),
+  }
 }
 
 function parseSubtasks(v: unknown): Subtask[] {
@@ -184,28 +194,6 @@ function parseMemo(v: unknown): Memo | null {
     createdAt: created,
     updatedAt: typeof v.updatedAt === 'string' ? v.updatedAt : created,
   }
-}
-
-// —— 重复任务: 完成时按规则推进到下一周期 ——
-function advanceDate(dateStr: string, repeat: Repeat): string {
-  const d = parseISO(dateStr)
-  const n = repeat.interval
-  let next: Date
-  switch (repeat.freq) {
-    case 'daily':
-      next = addDays(d, n)
-      break
-    case 'weekly':
-      next = addWeeks(d, n)
-      break
-    case 'monthly':
-      next = addMonths(d, n)
-      break
-    case 'yearly':
-      next = addYears(d, n)
-      break
-  }
-  return format(next, 'yyyy-MM-dd')
 }
 
 interface TasksState {
@@ -471,7 +459,7 @@ export const useTasksStore = create<TasksState>((set, get) => {
       // 完成: 若是重复任务且有到期日 -> 原任务推进到下一周期(保持未完成),
       // 同时落一条已完成的历史副本; 否则普通标记完成。
       if (task.repeat && task.dueDate) {
-        const nextDate = advanceDate(task.dueDate, task.repeat)
+        const next = advanceRepeat(task.dueDate, task.repeat)
         const historyId = crypto.randomUUID()
         const history: Task = {
           ...task,
@@ -484,7 +472,7 @@ export const useTasksStore = create<TasksState>((set, get) => {
         commit({
           tasks: [
             ...get().tasks.map((t) =>
-              t.id === id ? { ...t, dueDate: nextDate, updatedAt: ts } : t,
+              t.id === id ? { ...t, dueDate: next.dueDate, repeat: next.repeat, updatedAt: ts } : t,
             ),
             history,
           ],
