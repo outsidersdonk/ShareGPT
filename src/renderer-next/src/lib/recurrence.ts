@@ -4,7 +4,16 @@
 //  - 每个展开出来的 occurrence 复用原事件 id, 但带一个 occurrenceStart 标记本次发生的起点;
 //    视图层用 `${id}@${occurrenceStart}` 当 React key, 编辑时仍按原 id 找到母事件。
 //  - 仅在区间内枚举, 并设硬上限防止 until 缺失时无限循环。
-import { addDays, addMonths, addWeeks, addYears, isAfter, isBefore } from 'date-fns'
+import {
+  addDays,
+  addMonths,
+  addWeeks,
+  addYears,
+  differenceInCalendarDays,
+  differenceInCalendarMonths,
+  isAfter,
+  isBefore,
+} from 'date-fns'
 import type { CalendarEvent, RecurrenceFreq } from '@/store/useCalendarStore'
 
 // 一次具体发生: 在原事件基础上替换 start/end 为本次发生的时间。
@@ -28,6 +37,22 @@ function step(date: Date, freq: RecurrenceFreq, interval: number): Date {
       return addMonths(date, interval)
     case 'YEARLY':
       return addYears(date, interval)
+  }
+}
+
+// 区间左界之前已完整经过的周期数 (略保守, 少算不多算), 用于直接跳到区间附近开始枚举,
+// 避免很早以前开始的重复事件在到达可见区间前就耗尽硬上限。
+function periodsBefore(base: Date, target: Date, freq: RecurrenceFreq): number {
+  if (!isAfter(target, base)) return 0
+  switch (freq) {
+    case 'DAILY':
+      return differenceInCalendarDays(target, base)
+    case 'WEEKLY':
+      return Math.floor(differenceInCalendarDays(target, base) / 7)
+    case 'MONTHLY':
+      return differenceInCalendarMonths(target, base)
+    case 'YEARLY':
+      return Math.floor(differenceInCalendarMonths(target, base) / 12)
   }
 }
 
@@ -56,7 +81,11 @@ export function expandEvent(
   const untilDate = until ? new Date(until) : null
 
   const out: EventOccurrence[] = []
-  let cursor = baseStart
+  // 每次发生都从母事件起点按「第 n 个周期」推算, 不在上一次结果上累加:
+  // 否则 1/31 按月重复会在 2 月被截成 28 日, 之后永久停在 28 日。
+  const leadIn = new Date(rangeStart.getTime() - durationMs)
+  let n = Math.max(0, Math.floor(periodsBefore(baseStart, leadIn, freq) / safeInterval) - 1)
+  let cursor = step(baseStart, freq, n * safeInterval)
   let guard = 0
 
   while (guard < MAX_OCCURRENCES) {
@@ -76,7 +105,8 @@ export function expandEvent(
         key: `${event.id}@${startIso}`,
       })
     }
-    cursor = step(cursor, freq, safeInterval)
+    n += 1
+    cursor = step(baseStart, freq, n * safeInterval)
   }
 
   return out
