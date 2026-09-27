@@ -64,7 +64,8 @@ function NotesSyncBadge() {
   return (
     <span className={cn('inline-flex items-center gap-1 text-xs', color)} title={SYNC_LABEL[state]}>
       <Icon className={cn('size-3.5', state === 'syncing' && 'animate-spin')} />
-      <span className="hidden sm:inline">{SYNC_LABEL[state]}</span>
+      {/* 窄窗口 (<1024px) 只显示图标, 把空间留给面板标题。 */}
+      <span className="hidden lg:inline">{SYNC_LABEL[state]}</span>
     </span>
   )
 }
@@ -187,6 +188,8 @@ export function NotesPanel() {
             key={t.key}
             type="button"
             onClick={() => setCenterMode(t.key)}
+            title={t.label}
+            aria-label={t.label}
             className={cn(
               'inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-all',
               centerMode === t.key
@@ -194,7 +197,9 @@ export function NotesPanel() {
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            <t.icon className="size-3.5" /> {t.label}
+            <t.icon className="size-3.5" />
+            {/* 窄窗口只显示图标 (悬停有提示), 避免工具栏把「笔记 / 知识库」标题挤成一个字。 */}
+            <span className="hidden lg:inline">{t.label}</span>
           </button>
         ))}
       </div>
