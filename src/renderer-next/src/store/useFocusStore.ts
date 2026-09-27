@@ -9,6 +9,7 @@ import { assertUserDataWritable, userDataTransitionState } from '@/lib/userDataT
 import { coalesceInFlight } from '@/lib/inFlightRequest'
 import type { ShareGptApi } from '@/types/api'
 import { startNoise, stopNoise, type NoiseKind } from '@/lib/noise'
+import { currentLanguage, pick } from '@/lib/i18n'
 
 // 番茄钟 / 专注 store。全局单计时器: 用绝对时间戳(endAt)计算剩余, 后台不被 throttle 影响。
 export type Phase = 'focus' | 'short' | 'long'
@@ -122,13 +123,22 @@ export const useFocusStore = create<FocusState>((set, get) => {
       const cycle = s.cycle + 1
       const next: Phase = cycle % s.settings.longEvery === 0 ? 'long' : 'short'
       set({ sessions: [...s.sessions, session], cycle, phase: next })
+      const lang = currentLanguage()
       void api.showSystemNotification({
-        title: '专注完成 🍅',
-        body: `已专注 ${s.settings.focusMin} 分钟，休息一下`,
+        title: pick(lang, '专注完成 🍅', 'Focus complete 🍅'),
+        body: pick(
+          lang,
+          `已专注 ${s.settings.focusMin} 分钟，休息一下`,
+          `You focused for ${s.settings.focusMin} minutes. Take a break.`,
+        ),
       })
     } else {
       set({ phase: 'focus' })
-      void api.showSystemNotification({ title: '休息结束', body: '开始下一个专注吧' })
+      const lang = currentLanguage()
+      void api.showSystemNotification({
+        title: pick(lang, '休息结束', 'Break over'),
+        body: pick(lang, '开始下一个专注吧', 'Time for the next focus session.'),
+      })
     }
     const auto = get().settings.autoStart
     const dur = durationMs(get().phase)

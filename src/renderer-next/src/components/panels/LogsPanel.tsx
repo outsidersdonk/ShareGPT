@@ -4,7 +4,8 @@ import { toast } from 'sonner'
 import { PanelScaffold } from './PanelScaffold'
 import { LogToolbar } from './logs/LogToolbar'
 import { useLogStore } from '@/store/useLogStore'
-import type { LogEntry } from './logs/types'
+import { sourceLabelOf, type LogEntry } from './logs/types'
+import type { Language } from '@/lib/i18n'
 import { useI18n } from '@/hooks/useI18n'
 
 // 最多渲染的日志行数(仅 DOM 渲染上限; store 仍按 MAX_LOG_ENTRIES 缓存)。
@@ -16,7 +17,7 @@ const DISPLAY_LIMIT = 500
 // - 顶部工具条: 清空 / 复制全部 / 暂停自动滚动 / 按来源过滤
 // - 容量上限裁剪 (见 useLogStore / MAX_LOG_ENTRIES)
 export function LogsPanel() {
-  const { t } = useI18n()
+  const { language, t } = useI18n()
   const entries = useLogStore((s) => s.entries)
   const clear = useLogStore((s) => s.clear)
   const [autoScroll, setAutoScroll] = useState(true)
@@ -59,14 +60,16 @@ export function LogsPanel() {
 
   const handleCopy = () => {
     if (visible.length === 0) {
-      toast.info('暂无日志可复制')
+      toast.info(t('暂无日志可复制', 'No logs to copy'))
       return
     }
-    const text = visible.map(formatLine).join('\n')
+    const text = visible.map((e) => formatLine(e, language)).join('\n')
     void navigator.clipboard
       .writeText(text)
-      .then(() => toast.success(`已复制 ${visible.length} 行日志`))
-      .catch(() => toast.error('复制失败'))
+      .then(() =>
+        toast.success(t(`已复制 ${visible.length} 行日志`, `Copied ${visible.length} log lines`)),
+      )
+      .catch(() => toast.error(t('复制失败', 'Copy failed')))
   }
 
   const handleClear = () => {
@@ -102,13 +105,16 @@ export function LogsPanel() {
         >
           {visible.length === 0 ? (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-              暂无日志
+              {t('暂无日志', 'No logs yet')}
             </div>
           ) : (
             <>
               {truncated > 0 && (
                 <div className="mb-1 text-center text-[11px] text-muted-foreground">
-                  仅显示最近 {shown.length} 行（共 {visible.length} 行，更早的可用「复制」获取）
+                  {t(
+                    `仅显示最近 ${shown.length} 行（共 ${visible.length} 行，更早的可用「复制」获取）`,
+                    `Showing the latest ${shown.length} of ${visible.length} lines; use Copy to get older ones.`,
+                  )}
                 </div>
               )}
               {shown.map((e) => (
@@ -122,15 +128,16 @@ export function LogsPanel() {
   )
 }
 
-function formatLine(e: LogEntry): string {
-  return `[${e.ts}] [${e.sourceLabel}] ${e.line}`
+function formatLine(e: LogEntry, language: Language): string {
+  return `[${e.ts}] [${sourceLabelOf(e.source, language)}] ${e.line}`
 }
 
 function LogRow({ entry }: { entry: LogEntry }) {
+  const { language } = useI18n()
   return (
     <div className="flex gap-2 whitespace-pre-wrap break-all">
       <span className="shrink-0 text-muted-foreground tabular-nums">[{entry.ts}]</span>
-      <span className="shrink-0 text-primary">[{entry.sourceLabel}]</span>
+      <span className="shrink-0 text-primary">[{sourceLabelOf(entry.source, language)}]</span>
       <span className="text-foreground">{entry.line}</span>
     </div>
   )
