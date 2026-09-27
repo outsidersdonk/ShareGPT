@@ -11,6 +11,7 @@ import { RangeControls } from './stats/RangeControls'
 import { PieChart } from './stats/PieChart'
 import { RankList } from './stats/RankList'
 import { StatsSkeleton } from './stats/StatsSkeleton'
+import { useI18n } from '@/hooks/useI18n'
 
 // 使用统计面板:
 // - 总查询数 (大数字, tabular-nums) + 参与人数
@@ -19,6 +20,7 @@ import { StatsSkeleton } from './stats/StatsSkeleton'
 // 数据直连协作服务器 GET /api/gpt/stats[?from&to], 带 Bearer useAuthStore.token。
 // 逻辑对照旧版 renderer.js loadGptRangeStats / renderGptStats / setGptStatsPreset。
 export function StatsPanel() {
+  const { t } = useI18n()
   const {
     authed,
     range,
@@ -48,7 +50,11 @@ export function StatsPanel() {
   // 未登录: 参照账户面板的 authed 判断, 给出登录提示。
   if (!authed) {
     return (
-      <PanelScaffold icon={BarChart3} title="使用统计" hint="查询量与排行">
+      <PanelScaffold
+        icon={BarChart3}
+        title={t('使用统计', 'Usage')}
+        hint={t('查询量与排行', 'Message counts and rankings')}
+      >
         <div className="mx-auto flex max-w-md flex-col items-center gap-3 px-6 py-16 text-center">
           <div className="grid size-14 place-items-center rounded-full bg-muted">
             <BarChart3 className="size-7 text-muted-foreground" />
@@ -75,8 +81,8 @@ export function StatsPanel() {
   return (
     <PanelScaffold
       icon={BarChart3}
-      title="使用统计"
-      hint="查询量与排行"
+      title={t('使用统计', 'Usage')}
+      hint={t('查询量与排行', 'Message counts and rankings')}
       toolbar={
         <Button variant="outline" size="sm" onClick={apply} disabled={loading}>
           <RefreshCw className={loading ? 'animate-spin' : ''} />

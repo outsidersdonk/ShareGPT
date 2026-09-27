@@ -2,6 +2,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { GptTab } from '@/store/useAiStore'
+import { useI18n } from '@/hooks/useI18n'
 
 // Telegram 式标签条: 标签 + 关闭按钮 + 新建按钮 (对齐旧 renderGptTabs)。
 export function GptTabBar({
@@ -19,6 +20,7 @@ export function GptTabBar({
   onClose: (tabId: string) => void
   onCreate: () => void
 }) {
+  const { t } = useI18n()
   const viewportRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ pointerX: number; scrollLeft: number } | null>(null)
   const [scrollbar, setScrollbar] = useState({ visible: false, left: 0, width: 100 })
@@ -74,7 +76,7 @@ export function GptTabBar({
               </button>
               <button
                 type="button"
-                aria-label={`关闭 ${tab.title}`}
+                aria-label={t(`关闭 ${tab.title}`, `Close ${tab.title}`)}
                 onClick={(event) => {
                   event.preventDefault()
                   event.stopPropagation()
@@ -89,8 +91,8 @@ export function GptTabBar({
         })}
         <button
           type="button"
-          aria-label="新建标签页"
-          title="新建标签页"
+          aria-label={t('新建标签页', 'New tab')}
+          title={t('新建标签页', 'New tab')}
           disabled={disabled}
           onClick={onCreate}
           className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-card hover:text-foreground disabled:opacity-40"

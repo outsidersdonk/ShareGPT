@@ -31,10 +31,13 @@ import { ImportActions } from './ImportActions'
 import { BrowserPrivacySection } from './BrowserPrivacySection'
 import { InterfaceSettings } from './InterfaceSettings'
 import { compareVersions, checkGithubUpdate, type BootstrapUpdate } from './bootstrap'
+import { LanguageSwitch } from '@/components/LanguageSwitch'
+import { useI18n } from '@/hooks/useI18n'
 
 // 登录页「发现新版本」提醒。自动更新源 = GitHub Releases (参考 cc-switch), 不再查询任何自建服务器,
 // 与本机版本比较; 有新版且未被「不再提示」(按版本记忆) 时展示。GitHub 不可达 -> 静默不显示。
 function LoginUpdateBanner() {
+  const { t } = useI18n()
   const meta = useAppStore((s) => s.meta)
   const dismissed = useAppStore((s) => s.settings?.ui?.dismissed_update_versions)
   const patchSection = useAppStore((s) => s.patchSection)
@@ -69,7 +72,7 @@ function LoginUpdateBanner() {
         <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-foreground">
-            发现新版本 <span className="selectable">v{latest}</span>
+            {t('发现新版本', 'New version available')} <span className="selectable">v{latest}</span>
           </p>
           {info?.notes && (
             <p className="selectable mt-0.5 line-clamp-2 text-xs text-muted-foreground">
@@ -80,7 +83,7 @@ function LoginUpdateBanner() {
         <button
           type="button"
           onClick={dismiss}
-          title="不再提示此版本"
+          title={t('不再提示此版本', "Don't show this version again")}
           className="shrink-0 rounded p-0.5 text-muted-foreground/70 transition-colors hover:text-foreground"
         >
           <X className="size-4" />
@@ -89,10 +92,10 @@ function LoginUpdateBanner() {
       <div className="mt-2 flex items-center gap-2">
         <Button size="sm" onClick={() => downloadUrl && void api.openExternal(downloadUrl)}>
           <Download />
-          下载新版本
+          {t('下载新版本', 'Download')}
         </Button>
         <Button size="sm" variant="ghost" onClick={dismiss}>
-          不再提示
+          {t('不再提示', "Don't show again")}
         </Button>
       </div>
     </div>
@@ -104,6 +107,7 @@ type WorkspaceEntryView = 'welcome' | 'choice' | 'organization' | 'personal'
 
 // 未登录态: 居中登录表单。预填 store.settings.collab。
 export function LoginForm() {
+  const { t } = useI18n()
   const collab = useAppStore((s) => s.settings?.collab)
   const meta = useAppStore((s) => s.meta)
   const workspaceMode = useAppStore((s) => s.workspaceMode)
@@ -159,15 +163,18 @@ export function LoginForm() {
     void login(params)
       .catch((err) => {
         if (isStaleAttemptError(err)) return
-        const message = err instanceof Error ? err.message : '自动登录失败，请重新登录'
-        setError(`自动登录失败：${message}`)
+        const message =
+          err instanceof Error
+            ? err.message
+            : t('自动登录失败，请重新登录', 'Automatic sign-in failed. Please sign in again')
+        setError(t(`自动登录失败：${message}`, `Automatic sign-in failed: ${message}`))
         setErrorField('password')
       })
       .finally(() => {
         loginUiBusyRef.current = false
         setSubmitting(false)
       })
-  }, [collab, login, workspaceMode])
+  }, [collab, login, workspaceMode, t])
 
   function focusField(field: ErrorField, select = false) {
     const ref = field === 'server' ? serverRef : field === 'username' ? usernameRef : passwordRef
@@ -185,19 +192,19 @@ export function LoginForm() {
     const trimmedServer = serverUrl.trim()
     const trimmedUser = username.trim()
     if (!trimmedServer) {
-      setError('请填写服务地址')
+      setError(t('请填写服务地址', 'Enter the server address'))
       setErrorField('server')
       focusField('server')
       return
     }
     if (!trimmedUser) {
-      setError('请填写账号')
+      setError(t('请填写账号', 'Enter your username'))
       setErrorField('username')
       focusField('username')
       return
     }
     if (!password) {
-      setError('请填写密码')
+      setError(t('请填写密码', 'Enter your password'))
       setErrorField('password')
       focusField('password')
       return
@@ -212,10 +219,15 @@ export function LoginForm() {
         await patchSection('ui', { workspace_entry_intro_done: true }).catch(() => undefined)
       }
       const profile = await login({ serverUrl, username, password, rememberPassword })
-      toast.success(`登录成功，欢迎 ${profile.displayName}`)
+      toast.success(
+        t(`登录成功，欢迎 ${profile.displayName}`, `Signed in. Welcome, ${profile.displayName}`),
+      )
     } catch (err) {
       if (isStaleAttemptError(err)) return
-      const message = err instanceof Error ? err.message : '登录失败，请稍后重试'
+      const message =
+        err instanceof Error
+          ? err.message
+          : t('登录失败，请稍后重试', 'Sign-in failed. Please try again later')
       toast.error(message)
       // 内联持久错误条 + 红边密码框 + 聚焦选中 (对齐旧版失败聚焦密码语义)。
       setError(message)
@@ -238,7 +250,13 @@ export function LoginForm() {
       }
       await enterPersonal()
     } catch (err) {
-      const message = err instanceof Error ? err.message : '个人工作区初始化失败，请重试'
+      const message =
+        err instanceof Error
+          ? err.message
+          : t(
+              '个人工作区初始化失败，请重试',
+              'Could not set up the personal workspace. Please try again',
+            )
       toast.error(message)
       setError(message)
     } finally {
@@ -263,18 +281,29 @@ export function LoginForm() {
             <div className="workspace-entry-mark grid size-16 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
               <Cable className="size-8" />
             </div>
-            <p className="mt-6 text-sm font-medium text-primary">首次设置</p>
+            <LanguageSwitch className="mt-6" />
+            <p className="mt-4 text-sm font-medium text-primary">
+              {t('首次设置', 'First-time setup')}
+            </p>
             <h1 id="workspace-welcome-title" className="mt-2 text-3xl font-semibold">
-              欢迎来到 {brandName}
+              {t(`欢迎来到 ${brandName}`, `Welcome to ${brandName}`)}
             </h1>
             <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-              你可以连接团队一起协作，也可以只在这台电脑上独立使用。接下来选择本次启动要进入的工作区。
+              {t(
+                '你可以连接团队一起协作，也可以只在这台电脑上独立使用。接下来选择本次启动要进入的工作区。',
+                'Connect to a team to work together, or use it on this computer only. Next, choose which workspace to open.',
+              )}
             </p>
             <Button size="lg" className="mt-8 min-w-40" onClick={() => setEntryView('choice')}>
-              开始设置
+              {t('开始设置', 'Get started')}
               <ArrowRight />
             </Button>
-            <p className="mt-4 text-xs text-muted-foreground">稍后仍可切换，选择不会删除已有数据</p>
+            <p className="mt-4 text-xs text-muted-foreground">
+              {t(
+                '稍后仍可切换，选择不会删除已有数据',
+                'You can switch later. Choosing does not delete any data.',
+              )}
+            </p>
           </main>
         </div>
       </div>
@@ -290,12 +319,17 @@ export function LoginForm() {
             aria-labelledby="workspace-choice-title"
           >
             <div className="text-center">
-              <p className="text-sm font-medium text-primary">选择使用方式</p>
+              <p className="text-sm font-medium text-primary">
+                {t('选择使用方式', 'Choose how to use it')}
+              </p>
               <h1 id="workspace-choice-title" className="mt-2 text-2xl font-semibold">
-                这次要进入哪个工作区？
+                {t('这次要进入哪个工作区？', 'Which workspace do you want to open?')}
               </h1>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                两种方式可以随时切换，配置、账号和 AI 网页会话分别持久保存。
+                {t(
+                  '两种方式可以随时切换，配置、账号和 AI 网页会话分别持久保存。',
+                  'You can switch at any time. Settings, accounts and AI sessions are saved separately for each.',
+                )}
               </p>
             </div>
 
@@ -310,11 +344,14 @@ export function LoginForm() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center justify-between gap-3">
-                    <span className="font-medium">连接团队</span>
+                    <span className="font-medium">{t('连接团队', 'Connect to a team')}</span>
                     <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" />
                   </span>
                   <span className="mt-1 block text-sm leading-6 text-muted-foreground">
-                    登录团队服务器，使用协作聊天、在线成员、管理员分配的线路与组织用量服务。
+                    {t(
+                      '登录团队服务器，使用协作聊天、在线成员、管理员分配的线路与组织用量服务。',
+                      'Sign in to your team server for team chat, online members, admin-assigned routes and team usage.',
+                    )}
                   </span>
                 </span>
               </button>
@@ -329,11 +366,16 @@ export function LoginForm() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center justify-between gap-3">
-                    <span className="font-medium">仅在本机使用</span>
+                    <span className="font-medium">
+                      {t('仅在本机使用', 'Use on this computer only')}
+                    </span>
                     <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" />
                   </span>
                   <span className="mt-1 block text-sm leading-6 text-muted-foreground">
-                    无需团队账号。自行配置个人代理和翻译服务，不显示聊天、成员和团队管理功能。
+                    {t(
+                      '无需团队账号。自行配置个人代理和翻译服务，不显示聊天、成员和团队管理功能。',
+                      'No team account needed. Set up your own proxy and translation service; chat, members and team management are hidden.',
+                    )}
                   </span>
                 </span>
               </button>
@@ -341,7 +383,10 @@ export function LoginForm() {
 
             <p className="mt-5 flex items-start justify-center gap-2 text-xs leading-5 text-muted-foreground">
               <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-primary" />
-              个人与团队数据互相隔离；切换不会迁移、覆盖或清除另一侧内容。
+              {t(
+                '个人与团队数据互相隔离；切换不会迁移、覆盖或清除另一侧内容。',
+                'Personal and team data are kept apart. Switching never moves, overwrites or clears the other side.',
+              )}
             </p>
           </main>
         </div>
@@ -364,17 +409,20 @@ export function LoginForm() {
               onClick={() => setEntryView('choice')}
             >
               <ArrowLeft />
-              返回选择使用方式
+              {t('返回选择使用方式', 'Back to choices')}
             </Button>
             <div className="mt-5">
               <div className="grid size-12 place-items-center rounded-xl bg-primary/10 text-primary">
                 <Laptop className="size-6" />
               </div>
               <h1 id="personal-entry-title" className="mt-5 text-2xl font-semibold">
-                在本机独立使用
+                {t('在本机独立使用', 'Use on this computer')}
               </h1>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                适合不需要团队协作、希望自行管理代理和翻译服务的使用场景。
+                {t(
+                  '适合不需要团队协作、希望自行管理代理和翻译服务的使用场景。',
+                  'For solo use with your own proxy and translation.',
+                )}
               </p>
             </div>
 
@@ -382,28 +430,42 @@ export function LoginForm() {
               <div className="flex gap-3 py-4">
                 <Settings2 className="mt-0.5 size-4 shrink-0 text-primary" />
                 <div>
-                  <p className="text-sm font-medium">配置由你管理</p>
+                  <p className="text-sm font-medium">
+                    {t('配置由你管理', 'You manage the settings')}
+                  </p>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    个人代理、翻译接口和相关偏好只归当前本机工作区使用。
+                    {t(
+                      '个人代理、翻译接口和相关偏好只归当前本机工作区使用。',
+                      'Proxy, translation and preferences stay in this workspace.',
+                    )}
                   </p>
                 </div>
               </div>
               <div className="flex gap-3 py-4">
                 <HardDrive className="mt-0.5 size-4 shrink-0 text-primary" />
                 <div>
-                  <p className="text-sm font-medium">网页会话独立保存</p>
+                  <p className="text-sm font-medium">
+                    {t('网页会话独立保存', 'Sessions saved separately')}
+                  </p>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    ChatGPT、Claude 和 Gemini
-                    使用个人专属分区，不读取任何团队账号的登录状态或历史会话。
+                    {t(
+                      'ChatGPT、Claude 和 Gemini 使用个人专属分区，不读取任何团队账号的登录状态或历史会话。',
+                      'ChatGPT, Claude and Gemini keep their own sign-ins, apart from any team account.',
+                    )}
                   </p>
                 </div>
               </div>
               <div className="flex gap-3 py-4">
                 <Users className="mt-0.5 size-4 shrink-0 text-primary" />
                 <div>
-                  <p className="text-sm font-medium">以后仍可连接团队</p>
+                  <p className="text-sm font-medium">
+                    {t('以后仍可连接团队', 'You can join a team later')}
+                  </p>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    进入后打开侧栏底部的“账户”，选择“登录组织工作区”即可切换；两侧数据都会继续保留。
+                    {t(
+                      '进入后打开侧栏底部的“账户”，选择“登录组织工作区”即可切换；两侧数据都会继续保留。',
+                      'Open "Account" in the sidebar, then "Sign in to team workspace". Both sides keep their data.',
+                    )}
                   </p>
                 </div>
               </div>
@@ -416,7 +478,9 @@ export function LoginForm() {
               disabled={enteringPersonal}
             >
               {enteringPersonal ? <Loader2 className="animate-spin" /> : <Laptop />}
-              {enteringPersonal ? '正在准备个人工作区…' : '进入个人工作区'}
+              {enteringPersonal
+                ? t('正在准备个人工作区…', 'Preparing the personal workspace…')
+                : t('进入个人工作区', 'Open personal workspace')}
             </Button>
             {error && (
               <p
@@ -448,10 +512,14 @@ export function LoginForm() {
             <div className="flex w-full items-start gap-3 rounded-md border border-border bg-muted/35 px-4 py-3">
               <Laptop className="mt-0.5 size-4 shrink-0 text-primary" />
               <div className="min-w-0">
-                <p className="text-sm font-medium">当前：个人工作区</p>
+                <p className="text-sm font-medium">
+                  {t('当前：个人工作区', 'Current: personal workspace')}
+                </p>
                 <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                  个人代理、翻译配置和 AI
-                  网页会话使用独立本机分区。登录组织后会切换到该账号自己的配置与网页会话。
+                  {t(
+                    '个人代理、翻译配置和 AI 网页会话使用独立本机分区。登录组织后会切换到该账号自己的配置与网页会话。',
+                    "Your personal proxy, translation settings and AI sessions use separate local storage. Signing in to a team switches to that account's own settings and sessions.",
+                  )}
                 </p>
               </div>
             </div>
@@ -465,7 +533,7 @@ export function LoginForm() {
               onClick={() => setEntryView('choice')}
             >
               <ArrowLeft />
-              返回选择使用方式
+              {t('返回选择使用方式', 'Back to choices')}
             </Button>
           )}
 
@@ -475,18 +543,26 @@ export function LoginForm() {
                 <CardHeader className="text-center">
                   <CardTitle className="flex items-center justify-center gap-2 text-xl">
                     <Building2 className="size-5 text-primary" />
-                    {showWorkspaceEntry ? '连接团队' : '登录组织工作区'}
+                    {showWorkspaceEntry
+                      ? t('连接团队', 'Connect to a team')
+                      : t('登录组织工作区', 'Sign in to team workspace')}
                   </CardTitle>
                   <CardDescription>
                     {showWorkspaceEntry
-                      ? '使用团队提供的服务地址和账号登录'
-                      : '登录后切换到该账号的独立配置和网页会话'}
+                      ? t(
+                          '使用团队提供的服务地址和账号登录',
+                          'Sign in with the server address and account from your team',
+                        )
+                      : t(
+                          '登录后切换到该账号的独立配置和网页会话',
+                          "Signing in switches to that account's own settings and sessions",
+                        )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form className="grid gap-4" onSubmit={handleSubmit}>
                     <div className="grid gap-2">
-                      <Label htmlFor="account-server">服务地址</Label>
+                      <Label htmlFor="account-server">{t('服务地址', 'Server address')}</Label>
                       <Input
                         ref={serverRef}
                         id="account-server"
@@ -501,11 +577,11 @@ export function LoginForm() {
                     </div>
 
                     <div className="grid gap-2">
-                      <Label htmlFor="account-username">账号</Label>
+                      <Label htmlFor="account-username">{t('账号', 'Username')}</Label>
                       <Input
                         ref={usernameRef}
                         id="account-username"
-                        placeholder="用户名"
+                        placeholder={t('用户名', 'Username')}
                         autoComplete="username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
@@ -515,12 +591,12 @@ export function LoginForm() {
                     </div>
 
                     <div className="grid gap-2">
-                      <Label htmlFor="account-password">密码</Label>
+                      <Label htmlFor="account-password">{t('密码', 'Password')}</Label>
                       <Input
                         ref={passwordRef}
                         id="account-password"
                         type="password"
-                        placeholder="密码"
+                        placeholder={t('密码', 'Password')}
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -534,7 +610,7 @@ export function LoginForm() {
                         htmlFor="account-remember"
                         className="cursor-pointer text-sm font-normal"
                       >
-                        记住密码
+                        {t('记住密码', 'Remember password')}
                       </Label>
                       <Switch
                         id="account-remember"
@@ -561,12 +637,12 @@ export function LoginForm() {
                       {submitting ? (
                         <>
                           <Loader2 className="animate-spin" />
-                          登录中…
+                          {t('登录中…', 'Signing in…')}
                         </>
                       ) : (
                         <>
                           <LogIn />
-                          登录
+                          {t('登录', 'Sign in')}
                         </>
                       )}
                     </Button>
@@ -577,7 +653,10 @@ export function LoginForm() {
                       <Separator className="my-4" />
                       <div className="grid gap-2">
                         <p className="text-xs text-muted-foreground">
-                          从备份文件恢复本机配置或资料包
+                          {t(
+                            '从备份文件恢复本机配置或资料包',
+                            'Restore local settings or data from a backup file',
+                          )}
                         </p>
                         <ImportActions />
                       </div>
@@ -590,10 +669,13 @@ export function LoginForm() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Building2 className="size-4 text-primary" />
-                    组织协作（可选）
+                    {t('组织协作（可选）', 'Team collaboration (optional)')}
                   </CardTitle>
                   <CardDescription>
-                    需要协作聊天、在线成员、管理员线路或组织用量时，再登录组织工作区。
+                    {t(
+                      '需要协作聊天、在线成员、管理员线路或组织用量时，再登录组织工作区。',
+                      'Sign in to a team workspace when you need team chat, online members, admin routes or team usage.',
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -603,7 +685,7 @@ export function LoginForm() {
                     onClick={() => setShowOrganizationLogin(true)}
                   >
                     <LogIn />
-                    登录组织工作区
+                    {t('登录组织工作区', 'Sign in to team workspace')}
                     <ArrowRight className="ml-auto" />
                   </Button>
                 </CardContent>
@@ -616,7 +698,7 @@ export function LoginForm() {
               <InterfaceSettings />
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">本机资料</CardTitle>
+                  <CardTitle className="text-base">{t('本机资料', 'Local data')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ImportActions />

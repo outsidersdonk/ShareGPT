@@ -75,6 +75,8 @@ export interface UiSettings {
   setup_guide_dismissed: boolean
   theme: 'dark' | 'light'
   sidebarSide: 'left' | 'right'
+  // 界面语言: 'zh' 中文 (默认) / 'en' English。
+  language?: 'zh' | 'en'
   showGemini: boolean
   showClaude: boolean
   // 被隐藏的内容导航入口 (ChatGPT/日历/待办/笔记/专注 等的 NavKey)。

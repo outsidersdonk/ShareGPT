@@ -3,6 +3,7 @@ import { Flag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PRIORITY_META, PRIORITY_OPTIONS } from './helpers'
 import type { Priority } from '@/store/useTasksStore'
+import { useI18n } from '@/hooks/useI18n'
 
 // 优先级旗标 + 下拉小菜单 (无 popover 组件, 用相对定位 + 点击外部关闭自建)。
 export function PriorityFlag({
@@ -14,6 +15,7 @@ export function PriorityFlag({
   onChange: (p: Priority) => void
   size?: 'sm' | 'md'
 }) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -40,7 +42,7 @@ export function PriorityFlag({
           'grid place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent',
           size === 'sm' ? 'size-7' : 'size-8',
         )}
-        title={`优先级: ${meta.label}`}
+        title={t(`优先级: ${meta.label}`, `Priority: ${meta.labelEn}`)}
       >
         <Flag className={cn('size-4', meta.flag)} fill={value > 0 ? 'currentColor' : 'none'} />
       </button>
@@ -63,7 +65,11 @@ export function PriorityFlag({
                 )}
               >
                 <Flag className={cn('size-4', m.flag)} fill={p > 0 ? 'currentColor' : 'none'} />
-                <span>{p === 0 ? '无优先级' : `${m.label}优先级`}</span>
+                <span>
+                  {p === 0
+                    ? t('无优先级', 'No priority')
+                    : t(`${m.label}优先级`, `${m.labelEn} priority`)}
+                </span>
               </button>
             )
           })}

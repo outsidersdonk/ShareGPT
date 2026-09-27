@@ -41,6 +41,7 @@ import { SyncCompareDialog } from './notes/SyncCompareDialog'
 import { useNotesSync, useNotesSyncStore, type NotesSyncState } from '@/hooks/useNotesSync'
 import { useNotesAiStore } from '@/store/useNotesAiStore'
 import { Cloud, CloudOff, RefreshCw } from 'lucide-react'
+import { useI18n } from '@/hooks/useI18n'
 
 const SYNC_LABEL: Record<NotesSyncState, string> = {
   off: '未同步',
@@ -81,6 +82,7 @@ const RIGHT_TABS: { key: RightTab; label: string; icon: typeof Link2 }[] = [
 ]
 
 export function NotesPanel() {
+  const { t } = useI18n()
   const init = useVaultStore((s) => s.init)
   const loaded = useVaultStore((s) => s.loaded)
   const applyExternalChanges = useVaultStore((s) => s.applyExternalChanges)
@@ -224,8 +226,8 @@ export function NotesPanel() {
   return (
     <PanelScaffold
       icon={BookText}
-      title="笔记 / 知识库"
-      hint="双链笔记、图谱与全文检索"
+      title={t('笔记 / 知识库', 'Notes')}
+      hint={t('双链笔记、图谱与全文检索', 'Linked notes, graph and full-text search')}
       scrollable={false}
       toolbar={toolbar}
     >

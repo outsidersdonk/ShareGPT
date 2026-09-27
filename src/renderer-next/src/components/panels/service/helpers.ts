@@ -77,6 +77,6 @@ export const DEFAULT_TARGET_DOMAINS = [
 ].join(',')
 
 export const FALLBACK_MODES = [
-  { value: 'system_proxy', label: '通过本机代理访问' },
-  { value: 'direct', label: '直接访问' },
+  { value: 'system_proxy', label: '通过本机代理访问', labelEn: 'Through the local proxy' },
+  { value: 'direct', label: '直接访问', labelEn: 'Direct' },
 ] as const

@@ -26,12 +26,14 @@ import { Onboarding } from '@/components/Onboarding'
 import { useUserDataTransition } from '@/lib/userDataTransitionState'
 import { Toaster } from '@/components/ui/sonner'
 import { openChatNotificationRoute } from '@/lib/notify'
+import { useI18n } from '@/hooks/useI18n'
 
 function safeText(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
 }
 
 export function Shell() {
+  const { t } = useI18n()
   const dataSuspended = useUserDataTransition()
   const active = useAppStore((s) => s.active)
   const dark = useAppStore((s) => s.dark)
@@ -108,7 +110,7 @@ export function Shell() {
           className="absolute inset-0 z-[100] grid place-items-center bg-background/90"
           role="status"
         >
-          正在保存并切换资料…
+          {t('正在保存并切换资料…', 'Saving and switching data…')}
         </div>
       )}
       <Titlebar />

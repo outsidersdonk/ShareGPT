@@ -9,6 +9,7 @@ import { TodoSidebar, type TodoSelection } from './todo/TodoSidebar'
 import { TaskListView } from './todo/TaskListView'
 import { TaskEditor } from './todo/TaskEditor'
 import { MemoBoard } from './todo/MemoBoard'
+import { useI18n } from '@/hooks/useI18n'
 
 type TopTab = 'todo' | 'memo'
 
@@ -18,6 +19,7 @@ type TopTab = 'todo' | 'memo'
 //  - 备忘录: 瀑布流便签看板
 // 数据由 useTasksStore 提供, 初始化时加载本地数据 (首次播种)。
 export function TodoPanel() {
+  const { t } = useI18n()
   const init = useTasksStore((s) => s.init)
   const loaded = useTasksStore((s) => s.loaded)
   const loading = useTasksStore((s) => s.loading)
@@ -41,7 +43,12 @@ export function TodoPanel() {
 
   if (!loaded)
     return (
-      <PanelScaffold icon={CheckSquare} title="待办与备忘" hint="任务清单与便签" scrollable={false}>
+      <PanelScaffold
+        icon={CheckSquare}
+        title={t('待办与备忘', 'To-do & Memos')}
+        hint={t('任务清单与便签', 'Task lists and notes')}
+        scrollable={false}
+      >
         <LocalDataStatus loading={loading} error={loadError} onRetry={init} />
       </PanelScaffold>
     )
@@ -49,26 +56,26 @@ export function TodoPanel() {
   return (
     <PanelScaffold
       icon={CheckSquare}
-      title="待办与备忘"
-      hint="任务清单与便签"
+      title={t('待办与备忘', 'To-do & Memos')}
+      hint={t('任务清单与便签', 'Task lists and notes')}
       scrollable={false}
       toolbar={
         <div className="flex items-center gap-3">
           <SyncBadge kind="tasks" />
           <div className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-1">
-            {(['todo', 'memo'] as TopTab[]).map((t) => (
+            {(['todo', 'memo'] as TopTab[]).map((item) => (
               <button
-                key={t}
+                key={item}
                 type="button"
-                onClick={() => setTab(t)}
+                onClick={() => setTab(item)}
                 className={cn(
                   'rounded-md px-4 py-1.5 text-base font-medium transition-colors',
-                  tab === t
+                  tab === item
                     ? 'bg-background text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                {t === 'todo' ? '待办' : '备忘录'}
+                {item === 'todo' ? t('待办', 'To-do') : t('备忘录', 'Memos')}
               </button>
             ))}
           </div>

@@ -608,6 +608,15 @@ export const DUE_GROUP_LABELS: Record<DueGroup, string> = {
   none: '无日期',
 }
 
+export const DUE_GROUP_LABELS_EN: Record<DueGroup, string> = {
+  overdue: 'Overdue',
+  today: 'Today',
+  tomorrow: 'Tomorrow',
+  next7: 'Next 7 days',
+  later: 'Later',
+  none: 'No date',
+}
+
 export const DUE_GROUP_ORDER: DueGroup[] = [
   'overdue',
   'today',

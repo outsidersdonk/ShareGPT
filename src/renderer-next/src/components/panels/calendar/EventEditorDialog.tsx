@@ -17,6 +17,8 @@ import { toast } from 'sonner'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import type { CalendarEvent, NewEventInput, RecurrenceFreq } from '@/store/useCalendarStore'
 import { RECURRENCE_OPTIONS, type RecurrencePreset } from './helpers'
+import { useI18n } from '@/hooks/useI18n'
+import { builtinName } from '@/lib/i18n'
 
 // 事件编辑器。两种模式:
 //  - 新建: 传 draft (预填的起止/全天), eventId 为空。
@@ -60,6 +62,7 @@ export function EventEditorDialog({
   target: EditorTarget | null
   onClose: () => void
 }) {
+  const { language, t } = useI18n()
   const calendars = useCalendarStore((s) => s.calendars)
   const events = useCalendarStore((s) => s.events)
   const addEvent = useCalendarStore((s) => s.addEvent)
@@ -140,11 +143,11 @@ export function EventEditorDialog({
   const handleSave = () => {
     const trimmed = title.trim()
     if (!trimmed) {
-      toast.error('请输入标题')
+      toast.error(t('请输入标题', 'Enter a title'))
       return
     }
     if (!calendarId) {
-      toast.error('请先选择日历')
+      toast.error(t('请先选择日历', 'Choose a calendar first'))
       return
     }
     const { startIso, endIso } = computeTimes()
@@ -166,10 +169,10 @@ export function EventEditorDialog({
 
     if (existing) {
       updateEvent(existing.id, payload)
-      toast.success('已更新')
+      toast.success(t('已更新', 'Updated'))
     } else {
       addEvent(payload)
-      toast.success('已创建')
+      toast.success(t('已创建', 'Created'))
     }
     onClose()
   }
@@ -177,7 +180,7 @@ export function EventEditorDialog({
   const handleDelete = () => {
     if (!existing) return
     removeEvent(existing.id)
-    toast.success('已删除')
+    toast.success(t('已删除', 'Deleted'))
     onClose()
   }
 
@@ -185,7 +188,7 @@ export function EventEditorDialog({
   const handleShareToTeam = () => {
     const trimmed = title.trim()
     if (!trimmed) {
-      toast.error('请输入标题')
+      toast.error(t('请输入标题', 'Enter a title'))
       return
     }
     const { startIso, endIso } = computeTimes()
@@ -199,21 +202,23 @@ export function EventEditorDialog({
       description: notes.trim() || undefined,
       color,
     })
-    toast.success('已共享到组队日历')
+    toast.success(t('已共享到组队日历', 'Shared to the team calendar'))
   }
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl">{existing ? '编辑事件' : '新建事件'}</DialogTitle>
+          <DialogTitle className="text-xl">
+            {existing ? t('编辑事件', 'Edit event') : t('新建事件', 'New event')}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
           {/* 标题 */}
           <Input
             autoFocus
-            placeholder="标题"
+            placeholder={t('标题', 'Title')}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="h-11 text-base font-medium"
@@ -221,7 +226,7 @@ export function EventEditorDialog({
 
           {/* 日历选择 (色点行) */}
           <div className="flex flex-col gap-2">
-            <Label className="text-sm text-muted-foreground">日历</Label>
+            <Label className="text-sm text-muted-foreground">{t('日历', 'Calendar')}</Label>
             <div className="flex flex-wrap gap-2">
               {calendars.map((c) => {
                 const active = c.id === calendarId
@@ -238,7 +243,7 @@ export function EventEditorDialog({
                     )}
                   >
                     <span className="size-2.5 rounded-full" style={{ backgroundColor: c.color }} />
-                    {c.name}
+                    {builtinName(c.name, c.isDefault, language)}
                     {active && <Check className="size-3.5" />}
                   </button>
                 )
@@ -249,7 +254,7 @@ export function EventEditorDialog({
           {/* 全天 */}
           <div className="flex items-center justify-between">
             <Label htmlFor="allday-switch" className="text-base">
-              全天
+              {t('全天', 'All day')}
             </Label>
             <Switch id="allday-switch" checked={allDay} onCheckedChange={setAllDay} />
           </div>
@@ -257,7 +262,9 @@ export function EventEditorDialog({
           {/* 起止时间 */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <Label className="w-10 shrink-0 text-sm text-muted-foreground">开始</Label>
+              <Label className="w-10 shrink-0 text-sm text-muted-foreground">
+                {t('开始', 'Start')}
+              </Label>
               <Input
                 type="date"
                 value={startDate}
@@ -274,7 +281,9 @@ export function EventEditorDialog({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Label className="w-10 shrink-0 text-sm text-muted-foreground">结束</Label>
+              <Label className="w-10 shrink-0 text-sm text-muted-foreground">
+                {t('结束', 'End')}
+              </Label>
               <Input
                 type="date"
                 value={endDate}
@@ -296,7 +305,7 @@ export function EventEditorDialog({
           <div className="flex flex-col gap-2">
             <Label className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <Repeat className="size-4" />
-              重复
+              {t('重复', 'Repeat')}
             </Label>
             <div className="flex flex-wrap gap-1.5">
               {RECURRENCE_OPTIONS.map((opt) => (
@@ -311,7 +320,7 @@ export function EventEditorDialog({
                       : 'border-border text-muted-foreground hover:bg-accent',
                   )}
                 >
-                  {opt.label}
+                  {t(opt.label, opt.labelEn)}
                 </button>
               ))}
             </div>
@@ -321,7 +330,7 @@ export function EventEditorDialog({
           <div className="flex items-center gap-2">
             <MapPin className="size-5 shrink-0 text-muted-foreground" />
             <Input
-              placeholder="地点"
+              placeholder={t('地点', 'Location')}
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               className="h-10 text-base"
@@ -332,7 +341,7 @@ export function EventEditorDialog({
           <div className="flex items-center gap-2">
             <Link2 className="size-5 shrink-0 text-muted-foreground" />
             <Input
-              placeholder="链接"
+              placeholder={t('链接', 'Link')}
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               className="h-10 text-base"
@@ -343,7 +352,7 @@ export function EventEditorDialog({
           <div className="flex items-start gap-2">
             <FileText className="mt-2.5 size-5 shrink-0 text-muted-foreground" />
             <textarea
-              placeholder="备注"
+              placeholder={t('备注', 'Notes')}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
@@ -360,20 +369,24 @@ export function EventEditorDialog({
               onClick={handleDelete}
             >
               <Trash2 className="size-4" />
-              删除
+              {t('删除', 'Delete')}
             </Button>
           ) : (
             <span />
           )}
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleShareToTeam} title="把此事件共享到组队日历">
+            <Button
+              variant="outline"
+              onClick={handleShareToTeam}
+              title={t('把此事件共享到组队日历', 'Share this event to the team calendar')}
+            >
               <Users className="size-4" />
-              共享到团队
+              {t('共享到团队', 'Share to team')}
             </Button>
             <Button variant="outline" onClick={onClose}>
-              取消
+              {t('取消', 'Cancel')}
             </Button>
-            <Button onClick={handleSave}>保存</Button>
+            <Button onClick={handleSave}>{t('保存', 'Save')}</Button>
           </div>
         </DialogFooter>
       </DialogContent>

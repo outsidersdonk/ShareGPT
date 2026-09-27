@@ -7,6 +7,7 @@ import {
 import { createSingleFlight } from '@/lib/singleFlight'
 import type { NavKey } from '@/lib/nav'
 import type { AppSettings, StatusPayload } from '@/types/settings'
+import { htmlLang, normalizeLanguage, type Language } from '@/lib/i18n'
 import {
   workspaceFallbackNav,
   workspaceNavAvailable,
@@ -29,6 +30,10 @@ interface AppState {
   // 侧栏位置 (左/右), 为对称给用户选择 (设置项, 入口在账户面板)
   sidebarSide: 'left' | 'right'
   setSidebarSide: (side: 'left' | 'right') => void
+
+  // 界面语言 (设置项, 入口在账户面板)。默认中文。
+  language: Language
+  setLanguage: (language: Language) => void
 
   // 是否在导航栏展示 Gemini 入口 (设置项, 入口在账户面板)。默认展示。
   showGemini: boolean
@@ -231,6 +236,31 @@ export const useAppStore = create<AppState>((set, get) => ({
         .patchSection('ui', { sidebarSide: side })
         .catch(() => undefined)
       return { sidebarSide: side }
+    }),
+
+  language: (() => {
+    try {
+      const language = normalizeLanguage(localStorage.getItem('sharegpt-language'))
+      document.documentElement.lang = htmlLang(language)
+      return language
+    } catch {
+      return 'zh'
+    }
+  })(),
+  // 设置界面语言: 写 localStorage (即时生效) + 回写磁盘 settings.ui.language (跨设备一致)。
+  setLanguage: (language) =>
+    set((s) => {
+      if (s.language === language) return s
+      try {
+        localStorage.setItem('sharegpt-language', language)
+      } catch {
+        /* ignore */
+      }
+      document.documentElement.lang = htmlLang(language)
+      void get()
+        .patchSection('ui', { language })
+        .catch(() => undefined)
+      return { language }
     }),
 
   showGemini: (() => {
@@ -450,6 +480,12 @@ export const useAppStore = create<AppState>((set, get) => ({
         const savedSide = mergedSettings.ui?.sidebarSide
         if (savedSide === 'left' || savedSide === 'right') {
           set({ sidebarSide: savedSide })
+        }
+        // 界面语言同样优先取磁盘设置, 无则保留 localStorage 现值。
+        const savedLanguage = mergedSettings.ui?.language
+        if (savedLanguage === 'zh' || savedLanguage === 'en') {
+          document.documentElement.lang = htmlLang(savedLanguage)
+          set({ language: savedLanguage })
         }
         // 是否展示 Gemini 同样优先取磁盘设置, 无则保留 localStorage 现值。
         const savedShowGemini = mergedSettings.ui?.showGemini

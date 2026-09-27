@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useState, type CSSProperties }
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/store/useAppStore'
 import { buildOnboardingSteps } from '@/lib/onboardingSteps'
+import { useI18n } from '@/hooks/useI18n'
 
 // 分步高亮新手导览 (类 sub2api 引导): 首次进入主界面自动开, 也可在标题栏「?」手动重开。
 // 通过 data-tour="nav-xxx" 锚点定位侧栏项, 用 box-shadow 镂空高亮 + 浮动卡片逐步讲解。
@@ -15,6 +16,7 @@ export function Onboarding() {
 }
 
 function OnboardingSteps() {
+  const { language, t } = useI18n()
   const setTourOpen = useAppStore((s) => s.setTourOpen)
   const patchSection = useAppStore((s) => s.patchSection)
   const sidebarSide = useAppStore((s) => s.sidebarSide)
@@ -24,7 +26,7 @@ function OnboardingSteps() {
     /\s+(Sender|Receiver)$/i,
     '',
   )
-  const steps = buildOnboardingSteps(brand)
+  const steps = buildOnboardingSteps(brand, language)
 
   const [index, setIndex] = useState(0)
   const [rect, setRect] = useState<DOMRect | null>(null)
@@ -138,16 +140,16 @@ function OnboardingSteps() {
         <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
         <div className="mt-4 flex items-center justify-between gap-2">
           <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={finish}>
-            跳过
+            {t('跳过', 'Skip')}
           </Button>
           <div className="flex items-center gap-2">
             {index > 0 && (
               <Button variant="outline" size="sm" onClick={prev}>
-                上一步
+                {t('上一步', 'Back')}
               </Button>
             )}
             <Button size="sm" onClick={next}>
-              {last ? '开始使用' : '下一步'}
+              {last ? t('开始使用', 'Get started') : t('下一步', 'Next')}
             </Button>
           </div>
         </div>

@@ -4,18 +4,26 @@ import { Badge } from '@/components/ui/badge'
 import { useAppStore } from '@/store/useAppStore'
 import { SenderForm } from './service/SenderForm'
 import { isSenderRunning } from './service/helpers'
+import { useI18n } from '@/hooks/useI18n'
 
 // 本客户端只做「发送端」: 内嵌 sing-box 把指定流量代理转发到用户另行部署的接收端。
 // 接收端不在本客户端范围内, 故不提供接收服务 UI。
 export function ServicePanel() {
+  const { t } = useI18n()
   const status = useAppStore((s) => s.status)
   const running = isSenderRunning(status)
 
   return (
     <PanelScaffold
       icon={Cable}
-      title="代理转发"
-      hint="内嵌 sing-box · 把指定流量转发到接收端"
+      title={t('代理转发', 'Proxy')}
+      hint={t(
+        t(
+          '内嵌 sing-box · 把指定流量转发到接收端',
+          'Built-in sing-box · forwards selected traffic to the exit',
+        ),
+        'Built-in sing-box · forwards selected traffic to the exit',
+      )}
       toolbar={
         <Badge variant={running ? 'default' : 'outline'} className="gap-1.5">
           <span
@@ -25,7 +33,7 @@ export function ServicePanel() {
                 : 'size-1.5 rounded-full bg-muted-foreground'
             }
           />
-          {running ? '运行中' : '未开启'}
+          {running ? t('运行中', 'Running') : t('未开启', 'Stopped')}
         </Badge>
       }
     >

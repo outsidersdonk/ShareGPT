@@ -7,6 +7,7 @@ import { QuickAddBar } from './QuickAddBar'
 import { TaskItem } from './TaskItem'
 import {
   DUE_GROUP_LABELS,
+  DUE_GROUP_LABELS_EN,
   groupByDue,
   selectByList,
   selectByView,
@@ -16,6 +17,8 @@ import type { Task, TaskList } from '@/store/useTasksStore'
 import { useTasksStore } from '@/store/useTasksStore'
 import type { TodoSelection } from './TodoSidebar'
 import type { ParsedQuickAdd } from '@/lib/quickadd'
+import { useI18n } from '@/hooks/useI18n'
+import { builtinName } from '@/lib/i18n'
 
 // 右侧任务列表区: 顶部快速添加 + 带语义分组头的任务列表。
 //  - 智能视图「今天/最近7天/全部」按到期分组; 「已完成」按完成时间倒序; 清单视图按到期分组。
@@ -32,6 +35,7 @@ export function TaskListView({
   inboxId: string
   onOpenTask: (id: string) => void
 }) {
+  const { language, t } = useI18n()
   const addTask = useTasksStore((s) => s.addTask)
   const toggleTask = useTasksStore((s) => s.toggleTask)
 
@@ -41,21 +45,25 @@ export function TaskListView({
   const { title, isCompleted, defaultListId } = useMemo(() => {
     if (selection.kind === 'list') {
       const l = listById.get(selection.id)
-      return { title: l?.name ?? '清单', isCompleted: false, defaultListId: selection.id }
+      return {
+        title: l ? builtinName(l.name, l.isInbox, language) : t('清单', 'List'),
+        isCompleted: false,
+        defaultListId: selection.id,
+      }
     }
     const labels: Record<string, string> = {
-      today: '今天',
-      next7: '最近7天',
-      inbox: '收件箱',
-      all: '全部',
-      completed: '已完成',
+      today: t('今天', 'Today'),
+      next7: t('最近7天', 'Next 7 days'),
+      inbox: t('收件箱', 'Inbox'),
+      all: t('全部', 'All'),
+      completed: t('已完成', 'Completed'),
     }
     return {
       title: labels[selection.view],
       isCompleted: selection.view === 'completed',
       defaultListId: selection.view === 'inbox' ? inboxId : inboxId,
     }
-  }, [selection, listById, inboxId])
+  }, [selection, listById, inboxId, language, t])
 
   const viewTasks = useMemo(() => {
     if (selection.kind === 'list') return selectByList(tasks, selection.id)
@@ -65,11 +73,21 @@ export function TaskListView({
   // 分组: 已完成不分组(倒序); 收件箱按到期分组但通常无日期; 其余按到期分组。
   const groups = useMemo(() => {
     if (isCompleted)
-      return [{ group: 'completed' as const, label: '已完成', tasks: sortCompleted(viewTasks) }]
+      return [
+        {
+          group: 'completed' as const,
+          label: t('已完成', 'Completed'),
+          tasks: sortCompleted(viewTasks),
+        },
+      ]
     const byDue = groupByDue(viewTasks)
     // 收件箱视图里若全部无日期, groupByDue 会只产出 none 组, 体验依然合理。
-    return byDue.map((g) => ({ group: g.group, label: DUE_GROUP_LABELS[g.group], tasks: g.tasks }))
-  }, [viewTasks, isCompleted])
+    return byDue.map((g) => ({
+      group: g.group,
+      label: t(DUE_GROUP_LABELS[g.group], DUE_GROUP_LABELS_EN[g.group]),
+      tasks: g.tasks,
+    }))
+  }, [viewTasks, isCompleted, t])
 
   const total = viewTasks.length
 
@@ -98,14 +116,21 @@ export function TaskListView({
           <Button
             variant="outline"
             size="sm"
-            title="把有到期日的待办一键同步到个人日历"
+            title={t(
+              '把有到期日的待办一键同步到个人日历',
+              'Sync all tasks with a due date to your calendar',
+            )}
             onClick={() => {
               const n = syncAllTasksToCalendar()
-              toast.success(n > 0 ? `已同步 ${n} 个任务到个人日历` : '没有可同步的任务(需有到期日)')
+              toast.success(
+                n > 0
+                  ? t(`已同步 ${n} 个任务到个人日历`, `Synced ${n} tasks to your calendar`)
+                  : t('没有可同步的任务(需有到期日)', 'No tasks to sync (they need a due date)'),
+              )
             }}
           >
             <CalendarPlus className="size-4" />
-            同步到日历
+            {t('同步到日历', 'Sync to calendar')}
           </Button>
         )}
       </div>
@@ -121,7 +146,9 @@ export function TaskListView({
               <ClipboardList className="size-7 text-muted-foreground" />
             </div>
             <p className="text-base text-muted-foreground">
-              {isCompleted ? '还没有已完成的任务' : '这里很清爽，添加一个任务吧'}
+              {isCompleted
+                ? t('还没有已完成的任务', 'No completed tasks yet')
+                : t('这里很清爽，添加一个任务吧', 'All clear. Add a task!')}
             </p>
           </div>
         ) : (

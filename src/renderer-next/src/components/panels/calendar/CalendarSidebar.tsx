@@ -5,9 +5,12 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { CALENDAR_PALETTE } from './helpers'
+import { useI18n } from '@/hooks/useI18n'
+import { builtinName } from '@/lib/i18n'
 
 // 左侧日历列表: 色点 + 名称 + 显隐勾选, 底部「新建日历」。
 export function CalendarSidebar() {
+  const { language, t } = useI18n()
   const calendars = useCalendarStore((s) => s.calendars)
   const toggleVisible = useCalendarStore((s) => s.toggleCalendarVisible)
   const addCalendar = useCalendarStore((s) => s.addCalendar)
@@ -29,7 +32,7 @@ export function CalendarSidebar() {
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-card/40">
       <div className="px-4 pt-4 pb-2 text-lg font-semibold tracking-wide text-foreground">
-        我的日历
+        {t('我的日历', 'My calendars')}
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2">
         {calendars.map((c) => (
@@ -46,7 +49,7 @@ export function CalendarSidebar() {
                 c.visible ? 'border-transparent text-white' : 'border-border text-transparent',
               )}
               style={c.visible ? { backgroundColor: c.color } : undefined}
-              aria-label={c.visible ? '隐藏' : '显示'}
+              aria-label={c.visible ? t('隐藏', 'Hide') : t('显示', 'Show')}
             >
               <Check className="size-3.5" strokeWidth={3} />
             </button>
@@ -56,14 +59,14 @@ export function CalendarSidebar() {
                 c.visible ? 'text-foreground' : 'text-muted-foreground',
               )}
             >
-              {c.name}
+              {builtinName(c.name, c.isDefault, language)}
             </span>
             {!c.isDefault && (
               <button
                 type="button"
                 onClick={() => removeCalendar(c.id)}
                 className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-                aria-label="删除日历"
+                aria-label={t('删除日历', 'Delete calendar')}
               >
                 <Trash2 className="size-3.5" />
               </button>
@@ -78,7 +81,7 @@ export function CalendarSidebar() {
           <div className="flex flex-col gap-2 rounded-md bg-background p-2">
             <Input
               autoFocus
-              placeholder="日历名称"
+              placeholder={t('日历名称', 'Calendar name')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => {
@@ -98,16 +101,16 @@ export function CalendarSidebar() {
                     color === p && 'ring-2 ring-ring',
                   )}
                   style={{ backgroundColor: p }}
-                  aria-label="选择颜色"
+                  aria-label={t('选择颜色', 'Choose color')}
                 />
               ))}
             </div>
             <div className="flex justify-end gap-1.5">
               <Button size="xs" variant="ghost" onClick={() => setAdding(false)}>
-                取消
+                {t('取消', 'Cancel')}
               </Button>
               <Button size="xs" onClick={submit}>
-                添加
+                {t('添加', 'Add')}
               </Button>
             </div>
           </div>
@@ -119,7 +122,7 @@ export function CalendarSidebar() {
             onClick={() => setAdding(true)}
           >
             <Plus className="size-4" />
-            新建日历
+            {t('新建日历', 'New calendar')}
           </Button>
         )}
       </div>

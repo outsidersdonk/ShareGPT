@@ -19,12 +19,14 @@ import { useFocusStore } from '@/store/useFocusStore'
 import { useChatStore } from '@/store/useChatStore'
 import { Button } from '@/components/ui/button'
 import { useClockTick } from '@/hooks/useFocusTimer'
+import { useI18n } from '@/hooks/useI18n'
 
 // 标题栏番茄钟倒计时: 运行时显示剩余时间, 点击跳到「专注」面板。
 function FocusChip() {
   const running = useFocusStore((s) => s.running)
   const phase = useFocusStore((s) => s.phase)
   const setActive = useAppStore((s) => s.setActive)
+  const { t: translate } = useI18n()
   useClockTick(running)
   if (!running) return null
   const t = Math.max(0, Math.round(useFocusStore.getState().displayMs() / 1000))
@@ -32,7 +34,7 @@ function FocusChip() {
   return (
     <button
       onClick={() => setActive('focus')}
-      title="专注计时中"
+      title={translate('专注计时中', 'Focus timer running')}
       className={cn(
         'app-no-drag inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums transition-colors',
         phase === 'focus' ? 'bg-primary/15 text-primary' : 'bg-blue-500/15 text-blue-500',
@@ -78,6 +80,7 @@ export function Titlebar({
   title?: string
   auxiliary?: boolean
 }) {
+  const { t } = useI18n()
   const mode = useAppStore((s) => s.mode)
   const dark = useAppStore((s) => s.dark)
   const toggleTheme = useAppStore((s) => s.toggleTheme)
@@ -121,7 +124,7 @@ export function Titlebar({
       .catch(() => undefined)
   }
 
-  const maxLabel = maximized ? '还原窗口' : '最大化'
+  const maxLabel = maximized ? t('还原窗口', 'Restore') : t('最大化', 'Maximize')
 
   // macOS 全屏时系统红绿灯会隐藏，此时左侧不再为它留白。Electron 的全屏过渡中
   // renderer resize 可能早于 isFullScreen() 更新，因此以 main 的完成事件为权威，resize 仅兜底。
@@ -169,7 +172,7 @@ export function Titlebar({
         {/* 客户端(sender)/dev(all) 不显示模式标; 仅接收端 GUI 显示「出口」以区分。 */}
         {!auxiliary && mode === 'receiver' && (
           <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-            出口
+            {t('出口', 'Exit')}
           </span>
         )}
       </div>
@@ -185,16 +188,18 @@ export function Titlebar({
             onClick={() => void retryLogin()}
           >
             <RefreshCw className={cn('size-3.5', connection === 'connecting' && 'animate-spin')} />
-            {connection === 'connecting' ? '正在连接…' : '重新登录'}
+            {connection === 'connecting'
+              ? t('正在连接…', 'Connecting…')
+              : t('重新登录', 'Sign in again')}
           </Button>
         )}
         {!auxiliary && inShell && (
-          <CtlButton onClick={() => setTourOpen(true)} label="新手引导">
+          <CtlButton onClick={() => setTourOpen(true)} label={t('新手引导', 'Tour')}>
             <HelpCircle className="size-4" />
           </CtlButton>
         )}
         {!auxiliary && (
-          <CtlButton onClick={toggleTheme} label="切换主题">
+          <CtlButton onClick={toggleTheme} label={t('切换主题', 'Toggle theme')}>
             {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </CtlButton>
         )}
@@ -203,13 +208,13 @@ export function Titlebar({
           <>
             {/* 主题切换与窗口控制间留分隔, 降低误触最小化/关闭。 */}
             <span aria-hidden className="mx-1 h-5 w-px bg-border" />
-            <CtlButton onClick={() => api.minimizeWindow()} label="最小化">
+            <CtlButton onClick={() => api.minimizeWindow()} label={t('最小化', 'Minimize')}>
               <Minus className="size-4" />
             </CtlButton>
             <CtlButton onClick={handleToggleMax} label={maxLabel}>
               {maximized ? <Copy className="size-4" /> : <Square className="size-4" />}
             </CtlButton>
-            <CtlButton onClick={() => api.closeWindow()} label="关闭" danger>
+            <CtlButton onClick={() => api.closeWindow()} label={t('关闭', 'Close')} danger>
               <X className="size-4" />
             </CtlButton>
           </>

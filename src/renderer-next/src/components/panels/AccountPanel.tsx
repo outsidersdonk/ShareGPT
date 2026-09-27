@@ -4,18 +4,24 @@ import { LoginForm } from './account/LoginForm'
 import { LoggedInView } from './account/LoggedInView'
 import { useAppStore } from '@/store/useAppStore'
 import { useProfileSync } from '@/hooks/useProfileSync'
+import { useI18n } from '@/hooks/useI18n'
 
 // 账户/登录面板:
 // - 个人工作区: 服务地址 / 账号 / 密码 / 记住密码 / 登录组织 (对应 collab.* 设置)
 // - 已登录: 当前账号/头像、退出、协作通知开关、个人资料编辑、应用内更新
 // 登录逻辑见 useAuth (直连协作服务器 POST /api/login), 会话态在 useAuthStore。
 export function AccountPanel() {
+  const { t } = useI18n()
   const authed = useAppStore((s) => s.authed)
   // 个人资料编辑回流监听 (昵称/头像同步 auth+chat store 并持久化)。
   useProfileSync()
 
   return (
-    <PanelScaffold icon={UserRound} title="账户" hint="登录与协作服务">
+    <PanelScaffold
+      icon={UserRound}
+      title={t('账户', 'Account')}
+      hint={t('登录与协作服务', 'Sign-in and settings')}
+    >
       {authed ? <LoggedInView /> : <LoginForm />}
     </PanelScaffold>
   )

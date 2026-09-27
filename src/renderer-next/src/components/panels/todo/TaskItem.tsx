@@ -3,6 +3,8 @@ import { Check, ListChecks, Repeat as RepeatIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PRIORITY_META, formatDue } from './helpers'
 import type { Task, TaskList } from '@/store/useTasksStore'
+import { useI18n } from '@/hooks/useI18n'
+import { builtinName } from '@/lib/i18n'
 
 // 单条任务行 (对齐滴答清单):
 //  - 左侧圆形勾选 (点击完成: 填充 + 缩放反馈; 行随后描边/淡出, 由父级把它移入已完成)
@@ -19,9 +21,10 @@ export function TaskItem({
   onToggle: (id: string) => void
   onOpen: (id: string) => void
 }) {
+  const { language, t } = useI18n()
   // 本地“正在完成”动画态: 勾选后短暂淡出, 再交给 store 真正移动。
   const [leaving, setLeaving] = useState(false)
-  const due = formatDue(task.dueDate, task.dueTime)
+  const due = formatDue(task.dueDate, task.dueTime, language)
   const meta = PRIORITY_META[task.priority]
   const doneSubs = task.subtasks.filter((s) => s.completed).length
   const totalSubs = task.subtasks.length
@@ -49,7 +52,9 @@ export function TaskItem({
       <button
         type="button"
         onClick={handleToggle}
-        aria-label={task.completed ? '标记未完成' : '标记完成'}
+        aria-label={
+          task.completed ? t('标记未完成', 'Mark as not done') : t('标记完成', 'Mark as done')
+        }
         className={cn(
           'mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border-2 transition-all duration-200 active:scale-90',
           task.completed
@@ -132,7 +137,7 @@ export function TaskItem({
         <span
           className="mt-1.5 size-2 shrink-0 rounded-full opacity-70"
           style={{ backgroundColor: list.color }}
-          title={list.name}
+          title={builtinName(list.name, list.isInbox, language)}
         />
       )}
     </div>

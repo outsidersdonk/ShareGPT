@@ -21,6 +21,7 @@ import {
   isSenderRunning,
   safeText,
 } from './helpers'
+import { useI18n } from '@/hooks/useI18n'
 
 const EMPTY: SenderSettings = {
   proxy_server: '',
@@ -33,6 +34,7 @@ const EMPTY: SenderSettings = {
 }
 
 export function SenderForm() {
+  const { t } = useI18n()
   const settings = useAppStore((s) => s.settings)
   const status = useAppStore((s) => s.status)
   const mode = useAppStore((s) => s.mode)
@@ -114,25 +116,40 @@ export function SenderForm() {
   // 移植旧版启动前校验: 已填服务器时, 端口必须是数字, uuid 必填。
   function validate(): string | null {
     if (personalWorkspace) {
-      if (!personalHost) return '请填写代理地址'
-      if (!isPortNumber(personalPort)) return '代理端口必须为数字'
+      if (!personalHost) return t('请填写代理地址', 'Enter the proxy address')
+      if (!isPortNumber(personalPort)) return t('代理端口必须为数字', 'Proxy port must be a number')
       return null
     }
     if (form.proxy_mode === 'airport') {
       // 机场模式使用已下发且获授权的节点，不依赖统一梯子的连接字段。
-      if (!airportAvailable) return '机场节点暂不可用，请选择其他可用线路或联系管理员'
+      if (!airportAvailable)
+        return t(
+          '机场节点暂不可用，请选择其他可用线路或联系管理员',
+          'Airport node is unavailable. Choose another route or contact your admin.',
+        )
     } else {
       const server = safeText(form.proxy_server)
-      if (!server) return '请先填写服务器地址，再开启代理'
-      if (!isPortNumber(safeText(form.proxy_port))) return '连接端口必须为数字'
-      if (!safeText(form.proxy_uuid)) return '请填写连接身份码'
-      if (!unifiedAvailable) return '统一梯子暂不可用，请选择其他可用线路或联系管理员'
+      if (!server)
+        return t(
+          '请先填写服务器地址，再开启代理',
+          'Enter the server address before starting the proxy',
+        )
+      if (!isPortNumber(safeText(form.proxy_port)))
+        return t('连接端口必须为数字', 'Connection port must be a number')
+      if (!safeText(form.proxy_uuid)) return t('请填写连接身份码', 'Enter the connection ID')
+      if (!unifiedAvailable)
+        return t(
+          '统一梯子暂不可用，请选择其他可用线路或联系管理员',
+          'The shared proxy is unavailable. Choose another route or contact your admin.',
+        )
     }
     const socks = safeText(form.socks_listen_port)
-    if (socks && !isPortNumber(socks)) return '本地代理端口必须为数字'
+    if (socks && !isPortNumber(socks))
+      return t('本地代理端口必须为数字', 'Local proxy port must be a number')
     if (!directMode) {
       const fb = safeText(form.fallback_local_port)
-      if (fb && !isPortNumber(fb)) return '本机已有代理端口必须为数字'
+      if (fb && !isPortNumber(fb))
+        return t('本机已有代理端口必须为数字', 'Existing local proxy port must be a number')
     }
     return null
   }
@@ -145,7 +162,7 @@ export function SenderForm() {
     }
     // 对齐旧 btnStartSender: 字段校验通过后再确认账号在线(token+WS), 否则拒绝启动。
     if (!canStart) {
-      toast.error('请先登录账号并保持在线')
+      toast.error(t('请先登录账号并保持在线', 'Sign in and stay online first'))
       return
     }
     setBusy(true)
@@ -171,9 +188,9 @@ export function SenderForm() {
       if (personalWorkspace && isPortNumber(runtimePort)) {
         await patchSection('sender', { socks_listen_port: runtimePort })
       }
-      toast.success('代理已开启')
+      toast.success(t('代理已开启', 'Proxy started'))
     } catch (e) {
-      toast.error((e as Error)?.message || '开启代理失败')
+      toast.error((e as Error)?.message || t('开启代理失败', 'Could not start the proxy'))
     } finally {
       setBusy(false)
     }
@@ -183,9 +200,9 @@ export function SenderForm() {
     setBusy(true)
     try {
       await api.stopSender()
-      toast.success('已发送停止指令')
+      toast.success(t('已发送停止指令', 'Stop command sent'))
     } catch (e) {
-      toast.error((e as Error)?.message || '停止代理失败')
+      toast.error((e as Error)?.message || t('停止代理失败', 'Could not stop the proxy'))
     } finally {
       setBusy(false)
     }
@@ -195,16 +212,25 @@ export function SenderForm() {
     <div className="flex flex-col gap-5">
       <p className="text-sm text-muted-foreground">
         {personalWorkspace
-          ? '连接你已有的代理。ShareGPT 只会将内嵌 AI 所需的网站交给它，其余流量保持直连。'
+          ? t(
+              '连接你已有的代理。ShareGPT 只会将内嵌 AI 所需的网站交给它，其余流量保持直连。',
+              'Connect to a proxy you already have. ShareGPT only sends the sites the embedded AI needs through it; other traffic stays direct.',
+            )
           : canEditTeamConfig
-            ? '你可以调整当前账号的代理设置；修改后需要重新开启代理。'
-            : '连接信息由管理员配置并自动同步，可查看但不可修改。你可以选择下方可用的代理方式；切换前请先停止代理。'}
+            ? t(
+                '你可以调整当前账号的代理设置；修改后需要重新开启代理。',
+                "You can change this account's proxy settings. Restart the proxy after changing them.",
+              )
+            : t(
+                '连接信息由管理员配置并自动同步，可查看但不可修改。你可以选择下方可用的代理方式；切换前请先停止代理。',
+                'Connection details are set by your admin and synced automatically. You can view them but not edit them. Pick an available proxy method below; stop the proxy before switching.',
+              )}
       </p>
 
       {/* 组织工作区可在账号线路和管理员下发节点之间选择；个人工作区没有这层切换。 */}
       {!personalWorkspace && (
         <div className="grid gap-1.5">
-          <Label className="cursor-default">代理方式</Label>
+          <Label className="cursor-default">{t('代理方式', 'Proxy method')}</Label>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -218,11 +244,16 @@ export function SenderForm() {
                   : 'border-border hover:bg-accent/40',
               )}
             >
-              <div className="text-sm font-medium">统一梯子（默认）</div>
+              <div className="text-sm font-medium">
+                {t('统一梯子（默认）', 'Shared proxy (default)')}
+              </div>
               <div className="truncate text-xs text-muted-foreground">
                 {unifiedAvailable
-                  ? `经统一服务器 ${safeText(form.proxy_server)} 出网`
-                  : '配置未就绪或暂未获授权'}
+                  ? t(
+                      `经统一服务器 ${safeText(form.proxy_server)} 出网`,
+                      `Exits through the shared server ${safeText(form.proxy_server)}`,
+                    )
+                  : t('配置未就绪或暂未获授权', 'Not configured or not authorized yet')}
               </div>
             </button>
             <button
@@ -237,11 +268,11 @@ export function SenderForm() {
                   : 'border-border hover:bg-accent/40',
               )}
             >
-              <div className="text-sm font-medium">机场节点</div>
+              <div className="text-sm font-medium">{t('机场节点', 'Airport node')}</div>
               <div className="truncate text-xs text-muted-foreground">
                 {airportAvailable
-                  ? `当前：${safeText(form.airport_name) || '已下发节点'}`
-                  : '管理员暂未下发可用节点'}
+                  ? `${t('当前：', 'Current: ')}${safeText(form.airport_name) || t('已下发节点', 'Assigned node')}`
+                  : t('管理员暂未下发可用节点', 'No node has been assigned by your admin yet')}
               </div>
             </button>
           </div>
@@ -254,14 +285,21 @@ export function SenderForm() {
           className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-muted-foreground"
         >
           <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-destructive" />
-          <span>请先登录账号并保持在线，再开启代理。</span>
+          <span>
+            {t(
+              '请先登录账号并保持在线，再开启代理。',
+              'Sign in and stay online before starting the proxy.',
+            )}
+          </span>
         </div>
       ) : null}
 
       {personalWorkspace ? (
         <div className="grid gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">代理协议</Label>
+            <Label className="text-xs text-muted-foreground">
+              {t('代理协议', 'Proxy protocol')}
+            </Label>
             <div className="grid grid-cols-2 rounded-md bg-muted p-1">
               {(['socks5', 'http'] as const).map((protocol) => (
                 <button
@@ -286,18 +324,24 @@ export function SenderForm() {
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
             <Field
               id="s_personal_proxy_host"
-              label="代理地址"
+              label={t('代理地址', 'Proxy address')}
               value={personalHost}
               placeholder="127.0.0.1"
               disabled={locked}
               onChange={(v) => update({ proxy_mode: 'personal', personal_proxy_host: v })}
-              hint="填写代理软件实际监听的地址；本机代理通常使用 127.0.0.1。"
+              hint={t(
+                t(
+                  '填写代理软件实际监听的地址；本机代理通常使用 127.0.0.1。',
+                  'The address your proxy app listens on. A local proxy usually uses 127.0.0.1.',
+                ),
+                'The address your proxy app listens on. A local proxy usually uses 127.0.0.1.',
+              )}
             />
             <Field
               id="s_personal_proxy_port"
-              label="代理端口"
+              label={t('代理端口', 'Proxy port')}
               value={personalPort}
-              placeholder="例如 7890"
+              placeholder={t('例如 7890', 'e.g. 7890')}
               disabled={locked}
               onChange={(v) => update({ proxy_mode: 'personal', personal_proxy_port: v })}
             />
@@ -308,40 +352,43 @@ export function SenderForm() {
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
               id="s_proxy_server"
-              label="服务器地址"
+              label={t('服务器地址', 'Server address')}
               value={form.proxy_server}
-              placeholder="例如 203.0.113.10 或 demo.example.com"
+              placeholder={t(
+                '例如 203.0.113.10 或 demo.example.com',
+                'e.g. 203.0.113.10 or demo.example.com',
+              )}
               disabled={locked}
               onChange={(v) => update({ proxy_server: v })}
             />
             <Field
               id="s_proxy_port"
-              label="连接端口"
+              label={t('连接端口', 'Connection port')}
               value={form.proxy_port}
-              placeholder="例如 443"
+              placeholder={t('例如 443', 'e.g. 443')}
               disabled={locked}
               onChange={(v) => update({ proxy_port: v })}
             />
             <Field
               id="s_proxy_uuid"
-              label="连接身份码"
+              label={t('连接身份码', 'Connection ID')}
               value={form.proxy_uuid}
-              placeholder="请输入连接身份码"
+              placeholder={t('请输入连接身份码', 'Enter the connection ID')}
               disabled={locked}
               onChange={(v) => update({ proxy_uuid: v })}
             />
             <Field
               id="s_socks_listen_port"
-              label="本地代理端口"
+              label={t('本地代理端口', 'Local proxy port')}
               value={form.socks_listen_port}
-              placeholder="例如 1080"
+              placeholder={t('例如 1080', 'e.g. 1080')}
               disabled={locked}
               onChange={(v) => update({ socks_listen_port: v })}
             />
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="s_fallback_mode" className="text-xs text-muted-foreground">
-                其他网站访问方式
+                {t('其他网站访问方式', 'Other websites')}
               </Label>
               <select
                 id="s_fallback_mode"
@@ -352,7 +399,7 @@ export function SenderForm() {
               >
                 {FALLBACK_MODES.map((m) => (
                   <option key={m.value} value={m.value}>
-                    {m.label}
+                    {t(m.label, m.labelEn)}
                   </option>
                 ))}
               </select>
@@ -360,9 +407,9 @@ export function SenderForm() {
 
             <Field
               id="s_fallback_local_port"
-              label="本机已有代理端口"
+              label={t('本机已有代理端口', 'Existing local proxy port')}
               value={form.fallback_local_port}
-              placeholder="例如 7890"
+              placeholder={t('例如 7890', 'e.g. 7890')}
               disabled={locked || directMode}
               onChange={(v) => update({ fallback_local_port: v })}
               className={directMode ? 'opacity-50' : undefined}
@@ -371,14 +418,14 @@ export function SenderForm() {
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="s_target_domains" className="text-xs text-muted-foreground">
-              固定走连接的网站
+              {t('固定走连接的网站', 'Sites always sent through the proxy')}
             </Label>
             <textarea
               id="s_target_domains"
               rows={4}
               readOnly
               value={resolvedTargetDomains}
-              placeholder="开启后由系统自动维护"
+              placeholder={t('开启后由系统自动维护', 'Maintained automatically once started')}
               className="resize-none rounded-md border border-input bg-muted/40 px-3 py-2 text-xs text-muted-foreground shadow-xs outline-none"
             />
           </div>
@@ -392,10 +439,16 @@ export function SenderForm() {
               htmlFor="s_route_all"
               className="cursor-pointer text-amber-600 dark:text-amber-400"
             >
-              全部流量走代理（测试 · 仅管理员）
+              {t(
+                '全部流量走代理（测试 · 仅管理员）',
+                'Send all traffic through the proxy (test · admins only)',
+              )}
             </Label>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              开启后除内网外的所有流量都走梯子（不再只走上面的清单），用于排查内嵌页到底访问了哪些域名；配合各页面的「代理检测」查看实际流量。修改后需重启代理生效。
+              {t(
+                '开启后除内网外的所有流量都走梯子（不再只走上面的清单），用于排查内嵌页到底访问了哪些域名；配合各页面的「代理检测」查看实际流量。修改后需重启代理生效。',
+                "When on, all traffic except the local network goes through the proxy (not just the list above). Use it with each page's proxy check to see which domains embedded pages actually use. Restart the proxy after changing it.",
+              )}
             </p>
           </div>
           <Switch
@@ -411,12 +464,12 @@ export function SenderForm() {
         {running ? (
           <Button variant="destructive" disabled={busy} onClick={handleStop}>
             {busy ? <Loader2 className="animate-spin" /> : <Square />}
-            停止代理
+            {t('停止代理', 'Stop proxy')}
           </Button>
         ) : (
           <Button disabled={busy || !canStart} onClick={handleStart}>
             {busy ? <Loader2 className="animate-spin" /> : <Play />}
-            开启代理
+            {t('开启代理', 'Start proxy')}
           </Button>
         )}
       </div>

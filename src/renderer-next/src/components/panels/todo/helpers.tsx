@@ -1,19 +1,39 @@
 import { differenceInCalendarDays, format, isToday, isTomorrow, parseISO } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import type { Priority } from '@/store/useTasksStore'
+import { timeFormat, type Language } from '@/lib/i18n'
 
 // 待办模块共享小工具: 优先级配色 / 到期文案 / 便签调色板。
 
 // —— 优先级 —— (高=红 中=琥珀 低=蓝 无=灰)
 export const PRIORITY_META: Record<
   Priority,
-  { label: string; flag: string; dot: string; text: string }
+  { label: string; labelEn: string; flag: string; dot: string; text: string }
 > = {
-  3: { label: '高', flag: 'text-red-500', dot: 'bg-red-500', text: 'text-red-500' },
-  2: { label: '中', flag: 'text-amber-500', dot: 'bg-amber-500', text: 'text-amber-500' },
-  1: { label: '低', flag: 'text-blue-500', dot: 'bg-blue-500', text: 'text-blue-500' },
+  3: {
+    label: '高',
+    labelEn: 'High',
+    flag: 'text-red-500',
+    dot: 'bg-red-500',
+    text: 'text-red-500',
+  },
+  2: {
+    label: '中',
+    labelEn: 'Medium',
+    flag: 'text-amber-500',
+    dot: 'bg-amber-500',
+    text: 'text-amber-500',
+  },
+  1: {
+    label: '低',
+    labelEn: 'Low',
+    flag: 'text-blue-500',
+    dot: 'bg-blue-500',
+    text: 'text-blue-500',
+  },
   0: {
     label: '无',
+    labelEn: 'None',
     flag: 'text-muted-foreground/40',
     dot: 'bg-muted-foreground/40',
     text: 'text-muted-foreground',
@@ -26,10 +46,23 @@ export const PRIORITY_OPTIONS: Priority[] = [3, 2, 1, 0]
 export function formatDue(
   dueDate?: string,
   dueTime?: string,
+  language: Language = 'zh',
 ): { label: string; overdue: boolean } | null {
   if (!dueDate) return null
   const d = parseISO(dueDate)
   const diff = differenceInCalendarDays(d, new Date())
+  // 逾期: 严格早于今天 (今天到期不算逾期)。
+  if (language === 'en') {
+    let dayEn: string
+    if (isToday(d)) dayEn = 'Today'
+    else if (isTomorrow(d)) dayEn = 'Tomorrow'
+    else if (diff === -1) dayEn = 'Yesterday'
+    else if (diff < 0 && diff >= -7) dayEn = `${-diff} days ago`
+    else if (diff > 0 && diff <= 7) dayEn = format(d, 'EEEE')
+    else dayEn = format(d, 'MMM d')
+    const time = dueTime ? format(parseISO(`${dueDate}T${dueTime}`), timeFormat('en')) : ''
+    return { label: time ? `${dayEn} ${time}` : dayEn, overdue: diff < 0 }
+  }
   let day: string
   if (isToday(d)) day = '今天'
   else if (isTomorrow(d)) day = '明天'
@@ -83,10 +116,13 @@ export function isLightColor(hex: string): boolean {
 }
 
 // 便签更新时间的简短文案 (今天显示时刻, 否则显示日期)。
-export function memoTimeLabel(iso: string): string {
+export function memoTimeLabel(iso: string, language: Language = 'zh'): string {
   try {
     const d = parseISO(iso)
-    if (isToday(d)) return format(d, 'HH:mm')
+    if (isToday(d)) return format(d, timeFormat(language))
+    if (language === 'en') {
+      return format(d, d.getFullYear() === new Date().getFullYear() ? 'MMM d' : 'M/d/yyyy')
+    }
     const sameYear = d.getFullYear() === new Date().getFullYear()
     return format(d, sameYear ? 'M月d日' : 'yyyy/M/d', { locale: zhCN })
   } catch {
